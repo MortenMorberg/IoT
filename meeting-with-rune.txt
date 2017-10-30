@@ -1,0 +1,12 @@
+- bluemix on a phone? axelerometer data etc?
+
+- History of why are queing mechanisms relevant? forbrugsmønstre!
+- AMQP vs MQTT -> benefits? -> when to use? -> kvalitativ undersøgelse
+- max message size? vs small messages?
+- connection time? timing? time before subscription?
+- communication model -> sleep, wakeup etc ! relation to constrained devices!
+- scaling? what is the result?
+- any litterature? other investigations?
+- local vs cloud broker? security aspect? local 
+- FIFO queues only? configurable? queueing theory maybe?
+- probabilistic mesage size and time (when to send) usually is a poisson distribution! not synchronized! 
