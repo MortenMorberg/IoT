@@ -1,2 +1,5 @@
 workspace/.metadata/
 workspace/RemoteSystemsTempFiles/.project
+
+
+*.pyc
