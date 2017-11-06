@@ -1,6 +1,7 @@
+from IClient import IClient
 import pika
 
-class amqp_client:
+class amqpClient(IClient):
 
     def __init__(self, url):
         self.params = pika.URLParameters(url)
@@ -14,6 +15,8 @@ class amqp_client:
         self.channel.basic_publish( **kwargs )
 
     def subscribe(self):
+        pass
+    def disconnect(self):
         pass
 
     def __exit__(self, exc_type, exc_value, traceback):
