@@ -14,8 +14,8 @@ if __name__ == "__main__":
     amqp = amqpClient( url )
 
     amqp.connect()
-    topic = {'exchange': 'temp', 'routing_key': '', 'body': 'test' }
-    amqp.publish( **topic )
+    topic = [ {'exchange': 'temp1000', 'routing_key': '', 'body': 'test' } ]
+    amqp.publish( pubmsg=topic, kwargs={'nbr': [3], 'time': 0.3} )
     
     #amqp.subscribe('temp')
 
