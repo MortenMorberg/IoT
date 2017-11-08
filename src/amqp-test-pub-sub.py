@@ -5,6 +5,8 @@ import time
 
 # http://192.168.43.104:15672/ --> username: guest password: group4
 
+def callback(ch, method, properties, body):
+    print(body.decode('utf-8'))
 
 if __name__ == "__main__":
 
@@ -14,7 +16,8 @@ if __name__ == "__main__":
     amqp = amqpClient( url )
 
     amqp.connect()
-    topic = [ {'exchange': 'temp1000', 'routing_key': '', 'body': 'test' } ]
+    amqp.subscribe({'exchange': 'x', 'callback': callback, 'no_ack': True})
+    topic = [ {'exchange': 'y', 'routing_key': '', 'body': 'y' } ]
     amqp.publish( pubmsg=topic, kwargs={'nbr': [3], 'time': 0.3} )
     
     #amqp.subscribe('temp')
