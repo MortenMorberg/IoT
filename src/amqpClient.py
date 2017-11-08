@@ -10,7 +10,7 @@ class amqpClient(IClient):
         self.pChannel = None
         self.pThread = None
         self.sChannel = None
-        self.sThread = None
+        self.sQueuename = None
         self.params = None
         self.url = amqp_url
 
@@ -41,14 +41,21 @@ class amqpClient(IClient):
 
         return status
 
-    def subscribeThread(self, **kwargs):
+    def __subscribeThread(self, **kwargs):
         pass
-        #self.pChannel.basic_publish( **kwargs )
 
-    def subscribe(self, callback, queue):
+    def subscribe(self, kwargs):
         #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
-        self.sChannel = self.connect.channel() # start a channel
-        self.sThread = Thread( target=self.subscribeThread, kwargs={'topics' : topics} )
+        self.sChannel = self.connection.channel() # start a channel
+        self.sChannel.exchange_declare(exchange=kwargs['exchange'], exchange_type='fanout')
+
+        result = self.sChannel.queue_declare(exclusive=True)
+        queueName = result.method.queue
+
+        self.sChannel.queue_bind(exchange=kwargs['exchange'],queue=queueName)
+        self.sChannel.basic_consume(consumer_callback=kwargs['callback'], queue=queueName, no_ack=kwargs['no_ack'])
+
+        self.sThread = Thread( target=self.sChannel.start_consuming )
         self.sThread.start()
 
     def disconnect(self):
