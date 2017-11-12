@@ -1,2 +1,12 @@
 workspace/.metadata/
 workspace/RemoteSystemsTempFiles/.project
+.metadata/.lock
+.metadata/
+mqtt/src/__pycache__/topicTest.cpython-36.pyc
+mqtt/src/__pycache__/test.cpython-36.pyc
+mqtt/.pydevproject
+mqtt/.project
+mqtt/local/__pycache__/topic.cpython-36.pyc
+mqtt/local/__pycache__/client.cpython-36.pyc
+mqtt/local/__pycache__/__init__.cpython-36.pyc
+RemoteSystemsTempFiles/.project
