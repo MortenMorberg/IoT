@@ -1,5 +1,6 @@
 workspace/.metadata/
 workspace/RemoteSystemsTempFiles/.project
+<<<<<<< HEAD
 .metadata/.lock
 .metadata/
 mqtt/src/__pycache__/topicTest.cpython-36.pyc
@@ -10,3 +11,9 @@ mqtt/local/__pycache__/topic.cpython-36.pyc
 mqtt/local/__pycache__/client.cpython-36.pyc
 mqtt/local/__pycache__/__init__.cpython-36.pyc
 RemoteSystemsTempFiles/.project
+=======
+
+
+*.pyc
+*.swp
+>>>>>>> ca811b6142eb1572da719fcc32a5318dc1f7c4db
