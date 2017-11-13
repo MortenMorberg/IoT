@@ -16,7 +16,7 @@ if __name__ == "__main__":
     amqp = amqpClient( url )
 
     amqp.connect()
-    amqp.subscribe({'exchange': 'y', 'callback': callback, 'no_ack': True})
+    amqp.subscribe({'exchange': 'x', 'cb': callback, 'no_ack': True}, {'timeout' : 30})
     
     print("going to while loop")
     while(True):

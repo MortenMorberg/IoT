@@ -16,9 +16,8 @@ if __name__ == "__main__":
     amqp = amqpClient( url )
 
     amqp.connect()
-    topic = [ {'exchange': 'x', 'routing_key': '', 'body': 'x' } ]
-    amqp.publish( pubmsg=topic, kwargs={'nbr': [3], 'time': 0.3} )
-    
+    topic = [ {'exchange': 'y', 'routing_key': '', 'psize': 10 } ]
+    amqp.publish( pubmsg=topic, kwargs={'nr': 3, 'ival': 0.3} )
     #amqp.subscribe('temp')
 
     print("going to while loop")
