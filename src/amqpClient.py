@@ -27,8 +27,8 @@ class amqpClient(IClient):
         for i in range( len(pubmsg) ): # for every message to be published
             self.pChannel.exchange_declare(exchange=pubmsg[i]['exchange'], exchange_type='fanout')
             psize = pubmsg[i].pop('psize', 10) #TODO: 10 has been chosen for default size in publish if no psize is given
-            for j in range( kwargs['nr'][i] ): # for the number of times a msg should be published
-                pubmsg[i]['payload'] = gettopic(self.id, j, psize) # added new json payload!
+            for j in range( kwargs['nr'] ): # for the number of times a msg should be published
+                pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
                 self.pChannel.basic_publish( **pubmsg[i] )
                 print('sending msg: {0}'.format(i+j+1))
                 time.sleep( kwargs['ival'] )
