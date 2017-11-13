@@ -7,11 +7,11 @@ Created on 9. nov. 2017
 import json
 import time
 
-def gettopic(topicid, psize):
+def gettopic(deviceid, msgid, psize):
     timestamp = str(time.time())
     size_msg = len(json.dumps({"Id":topicid, "Time":timestamp, "Payload":''}))
     pad = 60-size_msg
-    return json.dumps({"Id":topicid, "Time":timestamp, "Payload":''.ljust(psize+pad)})
+    return json.dumps({"deviceid:"deviceid, "msgid":msgid, "time":timestamp, "payload":''.ljust(psize+pad)})
     
 def gettimediff(topic, time):
     msg = json.loads(topic)
