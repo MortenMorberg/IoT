@@ -16,3 +16,7 @@ class IClient(ABC):
     @abstractmethod
     def disconnect(self):
         raise NotImplementedError( "Should have implemented this" )
+        
+    @abstractmethod
+    def waitForClient(self):
+        raise NotImplementedError( "Should have implemented this" )
