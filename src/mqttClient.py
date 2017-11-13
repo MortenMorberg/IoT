@@ -13,7 +13,7 @@ from paho.mqtt import publish
 from topic import gettopic, gettimediff
 import threading
 
-class Client(IClient):
+class mqttClient(IClient):
     '''
     classdocs
     '''
@@ -41,32 +41,32 @@ class Client(IClient):
     def disconnect(self):
         self.mqttc.disconnect()
     
-    def subscribe(self, topic, qos=0):
-        self.mqttc.subscribe(topic, qos)
-        
-    def publish(self, topic, message, qos=0):
-        self.mqttc.publish(topic, message, qos)
-		self.t = threading.Thread(target=self.producefunc, args=(msgnr, ival, topic, qos, psize))
+	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
+    def subscribe(self, topic, kwargs):
+        self.mqttc.on_message = topic['cb']
+        self.t = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
+        self.t.start();
+	
+	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
+    def publish(self, topic, kwargs):
+        self.t = threading.Thread(target=self.publishfunc, args=(topic, kwargs))
         self.t.start() 
     
-    def producefunc(self, msgnr, ival, topic, qos, psize):
+	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
+    def publishfunc(self, topic, kwargs):
         self.mqttc.loop_start()
-        for i in range(msgnr):
-            self.mqttc.publish(topic, gettopic(i, psize), qos)
-            time.sleep(ival)
+        for i in range(kwargs['nr']):
+            self.mqttc.publish(topic['topic'], gettopic(i, topic['psize']), topic['qos'])
+            time.sleep(kwargs['ival'])
         self.mqttc.loop_stop()
         self.disconnect()
     
-    def consume(self, ival, topic, qos):
-        self.t = threading.Thread(target=self.consumefunc, args=(ival, topic, qos))
-        self.t.start();
-    
-    def consumefunc(self, ival, topic, qos):
-        self.mqttc.subscribe(topic, qos)
+	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
+    def subscribefunc(self, topic, kwargs):
+        self.mqttc.subscribe(topic['topic'], topic['qos'])
         self.mqttc.loop_start()
         
-        while True:
-            time.sleep(ival)
+        time.sleep(kwargs['timeout'])
         
         self.mqttc.loop_stop()
         self.disconnect()

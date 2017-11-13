@@ -53,7 +53,7 @@ class Client(object):
         self.t = threading.Thread(target=self.producefunc, args=(msgnr, ival, topic, qos, psize))
         self.t.start() 
     
-    def producefunc(self, msgnr, ival, topic, qos, psize):
+    def produceFunc(self, msgnr, ival, topic, qos, psize):
         self.mqttc.loop_start()
         for i in range(msgnr):
             self.publish(topic, gettopic(i, psize), qos)
@@ -65,7 +65,7 @@ class Client(object):
         self.t = threading.Thread(target=self.consumefunc, args=(ival, topic, qos))
         self.t.start();
     
-    def consumefunc(self, ival, topic, qos):
+    def consumeFunc(self, ival, topic, qos):
         self.mqttc.subscribe(topic, qos)
         self.mqttc.loop_start()
         
