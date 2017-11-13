@@ -13,6 +13,9 @@ from paho.mqtt import publish
 from topic import gettopic, gettimediff
 import threading
 
+# URL cloud: mqtt://yvqmqips:zqFw7ym66Lyk@m23.cloudmqtt.com:1103
+# URL local: Michael 
+
 class mqttClient(IClient):
     '''
     classdocs
@@ -23,7 +26,8 @@ class mqttClient(IClient):
         Constructor
         '''
         self.mqttc = mqtt.Client()
-        
+        self.pt = None
+        self.st = None
         url_str = os.environ.get(url, 'mqtt://localhost:1883')
         url = urlparse(url_str)
         #self.mqttc.username_pw_set(url.username, url.password)
@@ -44,19 +48,19 @@ class mqttClient(IClient):
 	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
     def subscribe(self, topic, kwargs):
         self.mqttc.on_message = topic['cb']
-        self.t = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
-        self.t.start();
+        self.st = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
+        self.st.start();
 	
 	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
     def publish(self, topic, kwargs):
-        self.t = threading.Thread(target=self.publishfunc, args=(topic, kwargs))
-        self.t.start() 
+        self.pt = threading.Thread(target=self.publishfunc, args=(topic, kwargs))
+        self.pt.start() 
     
 	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
     def publishfunc(self, topic, kwargs):
         self.mqttc.loop_start()
         for i in range(kwargs['nr']):
-            self.mqttc.publish(topic['topic'], gettopic(i, topic['psize']), topic['qos'])
+            self.mqttc.publish(topic['topic'], gettopic(self.id, i, topic['psize']), topic['qos'])
             time.sleep(kwargs['ival'])
         self.mqttc.loop_stop()
         self.disconnect()
@@ -72,7 +76,10 @@ class mqttClient(IClient):
         self.disconnect()
         
     def waitForClient(self):
-        self.t.join()
+        if self.pt != None:
+            self.pt.join()
+        if self.st != None:
+            self.st.join()
     '''
     Callbacks
     '''
