@@ -8,23 +8,18 @@ import json
 import time
 
 def gettopic(deviceid, msgid, psize):
-    timestamp = str(time.time())
-    size_msg = len(json.dumps({"msgid":msgid, "time":timestamp, "payload":''}))
-    pad = 60-size_msg
-    return json.dumps({"deviceid":deviceid, "msgid":msgid, "time":timestamp, "payload":''.ljust(psize+pad)})
-    
+    timestamp = str(time.time()).ljust(20,'0') #pad zeros to timestamp!
+    size_msg = len(json.dumps({"deviceid":deviceid, "msgid":msgid, "Time":timestamp, "Payload":''}))
+    return json.dumps({"deviceid":deviceid, "msgid":msgid, "time":timestamp, "payload":''.ljust(psize)})
+   
 def gettimediff(topic, time):
     msg = json.loads(topic)
-    return time - float(msg['time'])
+    return time - float(msg['Time'])
 
-def getMsgId(topic):
+def getid(topic):
     msg = json.loads(topic)
-    return msg['msgid']
+    return msg['Id']
 
 def getsize(topic):
     return len(topic)
-
-def getDeviceId(topic):
-    msg = json.loads(topic)
-    return msg['deviceid']
     
