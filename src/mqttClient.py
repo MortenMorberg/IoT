@@ -70,6 +70,9 @@ class mqttClient(IClient):
         
         self.mqttc.loop_stop()
         self.disconnect()
+        
+    def waitForClient(self):
+        self.t.join()
     '''
     Callbacks
     '''
