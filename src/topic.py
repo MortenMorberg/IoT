@@ -14,12 +14,15 @@ def gettopic(deviceid, msgid, psize):
    
 def gettimediff(topic, time):
     msg = json.loads(topic)
-    return time - float(msg['Time'])
+    return time - float(msg['time'])
 
-def getid(topic):
+def getMsgId(topic):
     msg = json.loads(topic)
-    return msg['Id']
+    return msg['msgid']
 
 def getsize(topic):
     return len(topic)
     
+def getDeviceId(topic):
+    msg = json.loads(topic)
+    return msg['deviceid']
