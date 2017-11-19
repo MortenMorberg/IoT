@@ -26,6 +26,7 @@ if __name__=="__main__":
         s_clients = []
         for c in range(0, nbr_publishers + nbr_consumers):
             client = None
+            topic = None
             if( arg == ['-mqtt'] ):
                 client = mqttClient(p, url)
             else:
