@@ -17,3 +17,7 @@ RemoteSystemsTempFiles/.project
 *.pyc
 *.swp
 >>>>>>> ca811b6142eb1572da719fcc32a5318dc1f7c4db
+src/topic_REMOTE_17368.py
+src/topic_BACKUP_17368.py
+src/topic_LOCAL_17368.py
+src/topic_BASE_17368.py
