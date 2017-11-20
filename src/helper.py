@@ -1,7 +1,7 @@
-import sys
 import numpy as np
 from amqpClient import amqpClient
 from mqttClient import mqttClient
+import matplotlib.pyplot as plt
 
 import time
 from topic import *
@@ -49,23 +49,29 @@ def pub_sub_test(broker, url, nr_pub, nr_con ):
         for p in p_clients:
             p.publish(topic, kwargs_p)
 
-        ## wait until they are terminated
+        ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
         for s in s_clients:
             s.waitForClient()
+            s.disconnect()
 
         for p in p_clients:
             p.waitForClient()
+            p.disconnect()
 
-    return np.median(timevals), nr_pub/nr_con
+    return np.median(timevals), nr_pub-nr_con
 
 
 if __name__=="__main__":
     times = []
     ratios = []
-    for i in range(100):
-        for j in range(100, 0, -1):
-            time, ratio = pub_sub_test('amqp', 'amqp://iotgroup4:iot4@192.168.43.104:5672', j, i )
-            times.append(time)
-            ratios.append(ratio)
+    idx = 100
+    for i in range(1, idx):
+        timeval, ratioval = pub_sub_test('amqp', 'amqp://iotgroup4:iot4@192.168.0.7:5672', i, idx - i)
+        times.append(timeval)
+        ratios.append(ratioval)
 
-    
+    plt.plot(ratios, times)
+    plt.title('Pub vs con, median time')
+    plt.xlabel('Publishers/Consumers (ratio)')
+    plt.ylabel('Time (median)')
+    plt.show()
