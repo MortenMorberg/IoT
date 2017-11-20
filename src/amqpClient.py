@@ -10,6 +10,7 @@ class amqpClient(IClient):
         self.connection = None
         self.pChannel = None
         self.pThread = None
+        self.sThread = None
         self.sChannel = None
         self.sQueuename = None
         self.params = None
@@ -30,7 +31,7 @@ class amqpClient(IClient):
             for j in range( kwargs['nr'] ): # for the number of times a msg should be published
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
                 self.pChannel.basic_publish( **pubmsg[i] )
-                print('sending msg: {0}'.format(i+j+1))
+                print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
         print('publishThread ended')
 
@@ -48,6 +49,11 @@ class amqpClient(IClient):
 
         return status
 
+    def subscribeThread(self):
+        print('Started consuming')
+        self.sChannel.start_consuming()
+        print('Ended consuming')
+
     def subscribe(self, submsg, kwargs):
         #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
         self.sChannel = self.connection.channel() # start a channel
@@ -61,8 +67,8 @@ class amqpClient(IClient):
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
         self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
-        self.connection.add_timeout(deadline=kwargs.get('timeout', 30), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
-        self.sThread = Thread( target=self.sChannel.start_consuming )
+        self.connection.add_timeout(deadline=kwargs.get('timeout', 120), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
+        self.sThread = Thread( target=self.subscribeThread )
         self.sThread.start()
 
     def disconnect(self):
