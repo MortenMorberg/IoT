@@ -14,7 +14,7 @@ from topic import gettopic, gettimediff
 import threading
 
 # URL cloud: mqtt://yvqmqips:zqFw7ym66Lyk@m23.cloudmqtt.com:1103
-# URL local: Michael 
+# URL local: 'mqtt://iotgroup4:iot4@192.168.43.104:1883'
 
 class mqttClient(IClient):
     '''
@@ -28,12 +28,16 @@ class mqttClient(IClient):
         self.mqttc = mqtt.Client()
         self.pt = None
         self.st = None
-        url_str = os.environ.get(url, 'mqtt://localhost:1883')
-        url = urlparse(url_str)
-        #self.mqttc.username_pw_set(url.username, url.password)
-        self.hostname = url.hostname
-        self.port = url.port
-        self.id = cid
+        url_str = os.environ.get(url) #, 'mqtt://localhost:1883')
+        url_parse = urlparse(url_str)
+        print(url_parse.port)
+        print(url_parse.hostname)
+        print(url_parse.password)
+        print(url_parse.username)
+        self.mqttc.username_pw_set('iotgroup4', 'iot4')
+        self.hostname = '192.168.43.104'
+        self.port = 1883
+        self.id = str(cid)
         
         self.mqttc.on_connect = self.on_connect
         self.mqttc.on_disconnect = self.on_disconnect
