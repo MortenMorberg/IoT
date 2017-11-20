@@ -10,6 +10,7 @@ class amqpClient(IClient):
         self.connection = None
         self.pChannel = None
         self.pThread = None
+        self.sThread = None
         self.sChannel = None
         self.sQueuename = None
         self.params = None
@@ -66,7 +67,7 @@ class amqpClient(IClient):
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
         self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
-        #self.connection.add_timeout(deadline=kwargs.get('timeout', 120), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
+        self.connection.add_timeout(deadline=kwargs.get('timeout', 120), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
         self.sThread = Thread( target=self.subscribeThread )
         self.sThread.start()
 
