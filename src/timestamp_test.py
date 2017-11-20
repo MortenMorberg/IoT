@@ -2,32 +2,30 @@ import sys
 from amqpClient import amqpClient
 from mqttClient import mqttClient
 
-import datetime
 import time
-
-def get_timestamp():
-    return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+from topic import *
 
 def callback(ch, method, properties, body):
-    print('Message received: {0} \nMessage sent: {1}\n\n' .format(get_timestamp(), body.decode('utf-8')))
+    topic = body.decode('utf-8')
+    print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
+                                    .format(getMsgId(topic), gettimediff(topic, time.time())))
 
 if __name__=="__main__":
+
+    if( sys.argv[1:][0] == [] or sys.argv[2:] == []):
+        print('No inline args! Use -mqtt or -amqp and nbr of consumers and publishers')
+        sys.exit()
+    if( sys.argv[1:][0]  == '-mqtt'):
+        print('Using mqtt')
+    elif( sys.argv[1:][0]  == '-amqp' ):
+        print('Using amqp')
+    else:
+        sys.exit()
+
     arg = sys.argv[1:][0]  #mqtt or amqp
     nbr_publishers = int(sys.argv[2:][0]) #publishers
     nbr_consumers = int(sys.argv[2:][1]) #consumers
     url = 'amqp://bbjpgbhk:g460d0kQW8VRZA7KlLQ6uC4-Mxd_yG3e@golden-kangaroo.rmq.cloudamqp.com/bbjpgbhk'
-
-    print(arg)
-
-    if( arg == [] and nbr_publishers+nbr_consumers < 0):
-        print('No inline args! Use -mqtt or -amqp and nbr of consumers and publishers')
-        sys.exit()
-    if( arg == '-mqtt'):
-        print('Using mqtt')
-    elif( arg == '-amqp' ):
-        print('Using amqp')
-    else:
-        sys.exit()
 
     if( arg == '-mqtt' or arg == '-amqp' ):
         p_clients = []
