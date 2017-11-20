@@ -10,10 +10,10 @@ def callback(ch, method, properties, body):
 
 if __name__ == "__main__":
 
-    url = 'amqp://bbjpgbhk:g460d0kQW8VRZA7KlLQ6uC4-Mxd_yG3e@golden-kangaroo.rmq.cloudamqp.com/bbjpgbhk'
-    #url =  'amqp://iotgroup4:iot4@192.168.43.104:5672'
+    #url = 'amqp://bbjpgbhk:g460d0kQW8VRZA7KlLQ6uC4-Mxd_yG3e@golden-kangaroo.rmq.cloudamqp.com/bbjpgbhk'
+    url =  'amqp://iotgroup4:iot4@192.168.43.104:5672'
     
-    amqp = amqpClient( url )
+    amqp = amqpClient( 1, url )
 
     amqp.connect()
     topic = [ {'exchange': 'y', 'routing_key': '', 'psize': 10 } ]
