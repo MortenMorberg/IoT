@@ -10,12 +10,16 @@ from topic import gettopic, gettimediff, getMsgId, getDeviceId
 
 topic = 'my/topic'
 message = '2'
+# URL cloud: mqtt://yvqmqips:zqFw7ym66Lyk@m23.cloudmqtt.com:1103
+# URL local: 
+url = 'mqtt://iotgroup4:iot4@192.168.43.104:1883'
+url_local = 'mqtt://localhost:1883'
 
 def on_message(client, userdata, msg):
     print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(gettimediff(msg.payload, time.time())))
 
-local_client_1 = mqttClient("1",'mqtt://localhost:1883')
-local_client_2 = mqttClient('2','mqtt://localhost:1883')
+local_client_1 = mqttClient('1',url)
+local_client_2 = mqttClient('2',url)
 
 local_client_1.connect()
 local_client_2.connect()
