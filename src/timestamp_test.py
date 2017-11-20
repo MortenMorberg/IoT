@@ -10,6 +10,10 @@ def callback(ch, method, properties, body):
     print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
                                     .format(getMsgId(topic), gettimediff(topic, time.time())))
 
+def on_message(client, userdata, msg):
+    print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(gettimediff(msg.payload, time.time())))
+
+                                    
 if __name__=="__main__":
 
     if( sys.argv[1:][0] == [] or sys.argv[2:] == []):
@@ -37,6 +41,10 @@ if __name__=="__main__":
 
             if( arg == '-mqtt' ):
                 client = mqttClient(c, url)
+                topic = {'topic':'x', 'psize':10000, 'qos':0 }
+                kwargs_p = {'nr':10, 'ival':0.1}
+                msg_s = {'topic':'x', 'qos':0, 'cb':on_message}
+                kwargs_s = {'timeout' : 30}
             else:
                 client = amqpClient(c, url)
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1000 } ]

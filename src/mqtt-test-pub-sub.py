@@ -26,7 +26,7 @@ local_client_2.connect()
 
 local_client_1.subscribe(topic={'topic':topic, 'qos':0, 'cb':on_message}, kwargs={'timeout':15})
 
-local_client_2.publish(topic={'topic':topic, 'psize':100, 'qos':0}, kwargs={'nr':10, 'ival':1})
+local_client_2.publish(topic={'topic':topic, 'psize':1000000, 'qos':0}, kwargs={'nr':10, 'ival':0.1})
 
 local_client_1.waitForClient()
 local_client_2.waitForClient()
