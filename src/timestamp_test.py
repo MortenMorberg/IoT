@@ -25,8 +25,8 @@ if __name__=="__main__":
     arg = sys.argv[1:][0]  #mqtt or amqp
     nbr_publishers = int(sys.argv[2:][0]) #publishers
     nbr_consumers = int(sys.argv[2:][1]) #consumers
-    url = 'amqp://bbjpgbhk:g460d0kQW8VRZA7KlLQ6uC4-Mxd_yG3e@golden-kangaroo.rmq.cloudamqp.com/bbjpgbhk'
-
+    #url = 'amqp://bbjpgbhk:g460d0kQW8VRZA7KlLQ6uC4-Mxd_yG3e@golden-kangaroo.rmq.cloudamqp.com/bbjpgbhk'
+    url = 'amqp://iotgroup4:iot4@192.168.43.104:5672'
     if( arg == '-mqtt' or arg == '-amqp' ):
         p_clients = []
         s_clients = []
@@ -39,7 +39,7 @@ if __name__=="__main__":
                 client = mqttClient(c, url)
             else:
                 client = amqpClient(c, url)
-                topic = [ {'exchange': 'x', 'routing_key': '', 'body': '3' } ]
+                topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1000 } ]
                 kwargs_p = {'nr': 3, 'ival': 10}
                 msg_s = {'exchange': 'x', 'cb': callback, 'no_ack': True}
                 kwargs_s = {'timeout' : 30}
@@ -50,11 +50,11 @@ if __name__=="__main__":
                 s_clients.append(client)
             client.connect()
 
-        for p in p_clients:
-            p.publish(topic, kwargs_p)
-
         for s in s_clients:
             s.subscribe(msg_s, kwargs_s)
+
+        for p in p_clients:
+            p.publish(topic, kwargs_p)
 
         while(True): #waiting for last msg
             time.sleep(1)
