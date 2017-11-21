@@ -64,9 +64,9 @@ def pub_sub_test(broker, url, nr_pub, nr_con ):
 if __name__=="__main__":
     times = []
     ratios = []
-    idx = 100
+    idx = 400
     for i in range(1, idx):
-        timeval, ratioval = pub_sub_test('amqp', 'amqp://iotgroup4:iot4@192.168.0.7:5672', i, idx - i)
+        timeval, ratioval = pub_sub_test('amqp', 'amqp://iotgroup4:iot4@192.168.0.3:5672', i, idx - i)
         times.append(timeval)
         ratios.append(ratioval)
 
@@ -75,3 +75,4 @@ if __name__=="__main__":
     plt.xlabel('Publishers/Consumers (ratio)')
     plt.ylabel('Time (median)')
     plt.show()
+    plt.savefig('pubVScon')
