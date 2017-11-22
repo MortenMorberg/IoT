@@ -3,6 +3,7 @@ from threading import Thread
 from topic import *
 import time
 import pika
+import copy
 
 class amqpClient(IClient):
 
@@ -27,11 +28,11 @@ class amqpClient(IClient):
         # TODO: should it be more randomly determined?
         for i in range( len(pubmsg) ): # for every message to be published
             self.pChannel.exchange_declare(exchange=pubmsg[i]['exchange'], exchange_type='fanout')
+            print(pubmsg[i])
             psize = pubmsg[i].pop('psize', 10) #TODO: 10 has been chosen for default size in publish if no psize is given
             for j in range( kwargs['nr'] ): # for the number of times a msg should be published
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
                 self.pChannel.basic_publish( **pubmsg[i] )
-                print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
         print('publishThread ended')
 
@@ -40,9 +41,10 @@ class amqpClient(IClient):
         if ( self.pThread == None ) or ( not self.pThread.is_alive() ): 
             if self.pChannel == None :
                 self.pChannel = self.connection.channel() # start a channel
-            qos = pubmsg[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
+            pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
+            qos = pubmsg_copy[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
             self.pChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
-            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg} )
+            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg_copy} )
             self.pThread.start()
         else:
             status = False
@@ -79,6 +81,7 @@ class amqpClient(IClient):
             self.pThread.join()
         if self.sThread != None:
             self.sThread.join()
+        self.disconnect()
         
 
     def __exit__(self, exc_type, exc_value, traceback):
