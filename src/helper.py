@@ -14,14 +14,16 @@ def callback_pub_sub_test(ch, method, properties, body):
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
-    print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
+    print('MsgID: {0} Time difference: {1}' \
                                     .format(getMsgId(topic), timediff))
 
 def callback_msg_interval(ch, method, properties, body):
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
+    global recv_msgs
     recv_msgs += 1
+
     print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
                                     .format(getMsgId(topic), timediff))
 
@@ -76,7 +78,7 @@ def pub_sub_test():
     idx = 10
     for i in range(1, idx):
         timevals = []
-        timeval, ratioval = pub_sub_run('amqp', 'iotgroup4:iot4@localhost:5672', i, idx - i, callback_pub_sub_test)
+        timeval, ratioval = pub_sub_run('amqp', 'iotgroup4:iot4@2.104.13.126:5672', i, idx - i, callback_pub_sub_test)
         times.append(timeval)
         ratios.append(ratioval)
 
@@ -87,20 +89,68 @@ def pub_sub_test():
     plt.show()
 
 def msg_interval_test():
-    times = []
-    ratios = []
-    idx = 10
-    for i in range(1, idx):
+    print('here')
+    y_packetloss = []
+    x_msg_s = []
+    broker = 'amqp'
+    url = 'iotgroup4:iot4@localhost:5672'
+    interval = 0.1
+    idx = 20
+    for i in range(10, idx, 10):
+        global recv_msgs
+        recv_msgs = 0
         timevals = []
-        timeval, ratioval = pub_sub_run('amqp', 'iotgroup4:iot4@localhost:5672', i, 1, callback_msg_interval)
-        sent_msgs = i
-        times.append(timeval)
-        ratios.append(ratioval)
+        if( broker == 'mqtt' or broker == 'amqp' ):
+            p_clients = []
+            s_client = None
 
-    plt.plot(ratios, times)
-    plt.title('Pub vs con, median time')
-    plt.xlabel('Publishers/Consumers (ratio)')
-    plt.ylabel('Time (median)')
+            for i in range(idx + 1):
+                client = None
+                topic = None
+                kwargs = None
+
+                if( broker == 'mqtt' ):
+                    client = mqttClient(i, url)
+                    topic = {'topic': 'x', 'psize': 1, 'qos':0 }
+                    kwargs_p = {'nr':10, 'ival': interval}
+                    msg_s = {'topic':'x', 'qos':0, 'cb': callback_msg_interval}
+                    kwargs_s = {'timeout' : 30}
+                else:
+                    client = amqpClient(i, 'amqp://{0}'.format(url))
+                    topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
+                    kwargs_p = {'nr': 10, 'ival': interval}
+                    msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True}
+                    kwargs_s = {'timeout' : 30}
+
+                if( i < idx ):
+                    p_clients.append(client)
+                else:
+                    s_client = client
+                client.connect()
+
+            s_client.subscribe(msg_s, kwargs_s)
+
+            time.sleep(1)
+
+            for p in p_clients:
+                p.publish(topic, kwargs_p)
+
+            ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
+            s_client.waitForClient()
+
+            for p in p_clients:
+                p.waitForClient()
+
+            sent_msgs = 10 * idx
+            x_msg_s.append(idx * interval)
+            y_packetloss.append(sent_msgs - recv_msgs)
+            print(sent_msgs)
+            print(recv_msgs)
+
+    plt.plot(x_msg_s, y_packetloss)
+    plt.title('Packet loss test')
+    plt.xlabel('Messages/s')
+    plt.ylabel('Packets lost')
     plt.show()
 
 if __name__=="__main__":
@@ -111,14 +161,14 @@ if __name__=="__main__":
     
     case = sys.argv[1]
 
+    print(case)
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
         pub_sub_test()
-        
 
-    elif( case == 'msg_interval_test' ):
+    elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
         msg_interval_test()
-        
     else:
+        print('Exit')
         sys.exit()
