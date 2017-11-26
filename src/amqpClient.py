@@ -31,9 +31,9 @@ class amqpClient(IClient):
             for j in range( kwargs['nr'] ): # for the number of times a msg should be published
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
                 self.pChannel.basic_publish( **pubmsg[i] )
-                print('sending msg: {0}'.format(i+j))
+                #print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
-        print('publishThread ended')
+        #print('publishThread ended')
 
     def publish(self, pubmsg, kwargs):
         status = True
@@ -50,9 +50,9 @@ class amqpClient(IClient):
         return status
 
     def subscribeThread(self):
-        print('Started consuming')
+        #print('Started consuming')
         self.sChannel.start_consuming()
-        print('Ended consuming')
+        #print('Ended consuming')
 
     def subscribe(self, submsg, kwargs):
         #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  

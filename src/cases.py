@@ -3,6 +3,7 @@ import sys
 from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import time
 from topic import *
@@ -14,8 +15,7 @@ def callback_pub_sub_test(ch, method, properties, body):
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
-    print('MsgID: {0} Time difference: {1}' \
-                                    .format(getMsgId(topic), timediff))
+    print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
 
 def callback_msg_interval(ch, method, properties, body):
     topic = body.decode('utf-8')
@@ -24,8 +24,16 @@ def callback_msg_interval(ch, method, properties, body):
     global recv_msgs
     recv_msgs += 1
 
-    print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
-                                    .format(getMsgId(topic), timediff))
+    print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
+
+def write_to_csv(x, y, fileName):
+    toCSV = ['{0}, {1}\n'.format(x, y) for x,y in zip(x,y)]
+    with open('{0}.csv'.format(fileName), 'w') as csv_file:
+            csv_file.write(''.join(toCSV))
+
+def read_from_csv(fileName):
+    dataframe = pd.read_csv('{0}.csv' .format( fileName ), sep=',', header=None, dtype=float)
+    return zip(*dataframe.values.tolist())
 
 def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
     if( broker == 'mqtt' or broker == 'amqp' ):
@@ -72,31 +80,30 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
 
     return np.median(timevals), nr_pub-nr_con
 
-def pub_sub_test():
+def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1, showplot=False):
     times = []
     ratios = []
-    idx = 10
-    for i in range(1, idx):
+    for i in range(1, iterations):
         timevals = []
-        timeval, ratioval = pub_sub_run('amqp', 'iotgroup4:iot4@2.104.13.126:5672', i, idx - i, callback_pub_sub_test)
+        timeval, ratioval = pub_sub_run(broker, url, i, iterations - i, callback_pub_sub_test, interval=stepsize)
         times.append(timeval)
         ratios.append(ratioval)
 
-    plt.plot(ratios, times)
-    plt.title('Pub vs con, median time')
-    plt.xlabel('Publishers/Consumers (ratio)')
-    plt.ylabel('Time (median)')
-    plt.show()
+    write_to_csv(ratios, times, '../csv/{0}'.format(fileName))
 
-def msg_interval_test():
-    print('here')
+    if( showplot ):
+        x, y = read_from_csv('../csv/{0}'.format(fileName))
+        plt.plot(x, y)
+        plt.title('Pub vs con, median time')
+        plt.xlabel('Publishers/Consumers (ratio)')
+        plt.ylabel('Time (median)')
+        plt.show()
+
+def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=0.01, showplot=False):
     y_packetloss = []
     x_msg_s = []
-    broker = 'amqp'
-    url = 'iotgroup4:iot4@localhost:5672'
     interval = 0.1
-    idx = 20
-    for i in range(10, idx, 10):
+    for i in range(10, iterations + 1, stepsize):
         global recv_msgs
         recv_msgs = 0
         timevals = []
@@ -104,25 +111,25 @@ def msg_interval_test():
             p_clients = []
             s_client = None
 
-            for i in range(idx + 1):
+            for j in range(i + 1):
                 client = None
                 topic = None
                 kwargs = None
 
                 if( broker == 'mqtt' ):
-                    client = mqttClient(i, url)
+                    client = mqttClient(j, url)
                     topic = {'topic': 'x', 'psize': 1, 'qos':0 }
                     kwargs_p = {'nr':10, 'ival': interval}
                     msg_s = {'topic':'x', 'qos':0, 'cb': callback_msg_interval}
                     kwargs_s = {'timeout' : 30}
                 else:
-                    client = amqpClient(i, 'amqp://{0}'.format(url))
+                    client = amqpClient(j, 'amqp://{0}'.format(url))
                     topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                     kwargs_p = {'nr': 10, 'ival': interval}
                     msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True}
                     kwargs_s = {'timeout' : 30}
 
-                if( i < idx ):
+                if( j < i ):
                     p_clients.append(client)
                 else:
                     s_client = client
@@ -141,17 +148,18 @@ def msg_interval_test():
             for p in p_clients:
                 p.waitForClient()
 
-            sent_msgs = 10 * idx
-            x_msg_s.append(idx * interval)
+            sent_msgs = 10 * i
+            x_msg_s.append(i * interval)
             y_packetloss.append(sent_msgs - recv_msgs)
-            print(sent_msgs)
-            print(recv_msgs)
 
-    plt.plot(x_msg_s, y_packetloss)
-    plt.title('Packet loss test')
-    plt.xlabel('Messages/s')
-    plt.ylabel('Packets lost')
-    plt.show()
+    write_to_csv(x_msg_s, y_packetloss, '../csv/{0}'.format(fileName))
+    if( showplot ):
+        x, y = read_from_csv('../csv/{0}'.format(fileName))
+        plt.plot(x, y)
+        plt.title('Packet loss test')
+        plt.xlabel('Messages/s')
+        plt.ylabel('Packets lost')
+        plt.show()
 
 if __name__=="__main__":
     case = None
@@ -160,15 +168,18 @@ if __name__=="__main__":
         sys.exit()
     
     case = sys.argv[1]
-
-    print(case)
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test()
+        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=10, stepsize=1, fileName='pubSubRatioTest', showplot=True)
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test()
+        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=10, stepsize=10, interval=0.01, fileName='msgIntervalTest', showplot=True)
+
+    elif( case == 'all'):
+        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50000, stepsize=10, interval=0.01, fileName='msgIntervalLongTest')
+        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50000, stepsize=1, fileName='pubSubRatioLongTest')
+
     else:
         print('Exit')
         sys.exit()
