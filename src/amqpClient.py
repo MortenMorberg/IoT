@@ -28,10 +28,12 @@ class amqpClient(IClient):
         # TODO: should it be more randomly determined?
         for i in range( len(pubmsg) ): # for every message to be published
             self.pChannel.exchange_declare(exchange=pubmsg[i]['exchange'], exchange_type='fanout')
-            print(pubmsg[i])
             psize = pubmsg[i].pop('psize', 10) #TODO: 10 has been chosen for default size in publish if no psize is given
             for j in range( kwargs['nr'] ): # for the number of times a msg should be published
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
+                if 'sent_list' in kwargs:
+                    kwargs['sent_list'].append(pubmsg[i]['body'])
+                    print(pubmsg[i]['body'])
                 self.pChannel.basic_publish( **pubmsg[i] )
                 time.sleep( kwargs['ival'] )
         print('publishThread ended')
@@ -64,7 +66,7 @@ class amqpClient(IClient):
 
         self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
 
-        result = self.sChannel.queue_declare(exclusive=True)
+        result = self.sChannel.queue_declare(exclusive=True, arguments=kwargs.get('arguments'))
         queueName = result.method.queue
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)

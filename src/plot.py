@@ -13,8 +13,6 @@ def plot(params, name):
 def histogram(params, name):
     pass
 
-
-
 if __name__ == '__main__':
     x = [1,2,3,4,5,6,7,8,9]
     y = [5,3,8,3,9,5,7,2,4]
