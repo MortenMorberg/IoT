@@ -9,23 +9,22 @@ def write_to_csv(x, y, fileName, name):
 
 def read_from_csv(fileName):
     with open('{0}.csv'.format(fileName), 'r') as csv_file:
-        name = csv_file.readline()
-    print(name)
-    dataframe = pd.read_csv('{0}.csv' .format( fileName ), skiprows=1, sep=',', dtype=float)
-    #print(dataframe.values)
-    return zip(*dataframe.values.tolist())
+        name = csv_file.readline().strip('\n')
+    dataframe = pd.read_csv('{0}.csv' .format( fileName ), skiprows=1, header=None, sep=',', dtype=float)
+    return list(zip(*dataframe.values.tolist())), name
 
 if __name__=="__main__":
 
     x = [1,2,3,4]
-    y = [7,8,9,10]
-    write_to_csv(x,y,'test', 'testname')
+    y = [5,6,7,8]
+    write_to_csv(x,y,'test', 'testname') 
+    xy, name = read_from_csv('test')
     
-    x,y = read_from_csv('test')
-    
-    print(list(x), list(y))
+    print(xy)
 
-    pass
+    print(x)
+    #print(list(x), list(y), name)
+
 
 
 
