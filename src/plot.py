@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-
+from csv import read_from_csv, write_to_csv 
+import sys
 
 # array of dict, with (x, y, x_name, y_name) as keys
 def plot(params, name):
@@ -14,7 +15,12 @@ def histogram(params, name):
     pass
 
 if __name__ == '__main__':
-    x = [1,2,3,4,5,6,7,8,9]
-    y = [5,3,8,3,9,5,7,2,4]
-    param = {'x' : x, 'y' : y, 'x_name' : 'this is x name', 'y_name' : 'this is y name'}
-    plot(param, 'test')
+    plot_type = sys.argv[1]
+    if plot_type == '-p':
+        pass
+    elif plot_type == '-h':
+        pass
+    else:
+        print('wrong type argument given')
+        sys.exit(1)
+    pass

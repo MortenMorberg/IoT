@@ -3,7 +3,7 @@ import sys
 from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
-import pandas as pd
+from csv import read_from_csv, write_to_csv
 
 import time
 from topic import *
@@ -25,15 +25,6 @@ def callback_msg_interval(ch, method, properties, body):
     recv_msgs += 1
 
     print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
-
-def write_to_csv(x, y, fileName):
-    toCSV = ['{0}, {1}\n'.format(x, y) for x,y in zip(x,y)]
-    with open('{0}.csv'.format(fileName), 'w') as csv_file:
-            csv_file.write(''.join(toCSV))
-
-def read_from_csv(fileName):
-    dataframe = pd.read_csv('{0}.csv' .format( fileName ), sep=',', header=None, dtype=float)
-    return zip(*dataframe.values.tolist())
 
 def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
     if( broker == 'mqtt' or broker == 'amqp' ):
