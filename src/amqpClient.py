@@ -3,7 +3,6 @@ from threading import Thread
 from topic import *
 import time
 import pika
-import copy
 
 class amqpClient(IClient):
 
@@ -35,18 +34,18 @@ class amqpClient(IClient):
                     kwargs['sent_list'].append(pubmsg[i]['body'])
                     print(pubmsg[i]['body'])
                 self.pChannel.basic_publish( **pubmsg[i] )
+                #print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
-        print('publishThread ended')
+        #print('publishThread ended')
 
     def publish(self, pubmsg, kwargs):
         status = True
         if ( self.pThread == None ) or ( not self.pThread.is_alive() ): 
             if self.pChannel == None :
                 self.pChannel = self.connection.channel() # start a channel
-            pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
-            qos = pubmsg_copy[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
+            qos = pubmsg[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
             self.pChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
-            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg_copy} )
+            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg} )
             self.pThread.start()
         else:
             status = False
@@ -54,9 +53,9 @@ class amqpClient(IClient):
         return status
 
     def subscribeThread(self):
-        print('Started consuming')
+        #print('Started consuming')
         self.sChannel.start_consuming()
-        print('Ended consuming')
+        #print('Ended consuming')
 
     def subscribe(self, submsg, kwargs):
         #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
@@ -83,7 +82,6 @@ class amqpClient(IClient):
             self.pThread.join()
         if self.sThread != None:
             self.sThread.join()
-        self.disconnect()
         
 
     def __exit__(self, exc_type, exc_value, traceback):
