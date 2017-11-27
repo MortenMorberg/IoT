@@ -30,10 +30,10 @@ class mqttClient(IClient):
         self.st = None
         url_str = os.environ.get(url) #, 'mqtt://localhost:1883')
         url_parse = urlparse(url_str)
-        print(url_parse.port)
-        print(url_parse.hostname)
-        print(url_parse.password)
-        print(url_parse.username)
+        #print(url_parse.port)
+        #print(url_parse.hostname)
+        #print(url_parse.password)
+        #print(url_parse.username)
         self.mqttc.username_pw_set('iotgroup4', 'iot4')
         self.hostname = '192.168.43.104'
         self.port = 1883
@@ -88,11 +88,11 @@ class mqttClient(IClient):
     Callbacks
     '''
     def on_disconnect(self, client, userdata, rc):
-        print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
+        #print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
         self.mqttc.loop_stop()
         
     def on_connect(self, client, userdata, flags, rc):
-        print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
+        #print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
         self.mqttc.loop_start()
     
     def on_log(self, client, obj, level, string):
