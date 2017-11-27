@@ -2,7 +2,7 @@ import numpy as np
 from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
-
+from csv_helper import write_to_csv
 import time
 from topic import *
 
@@ -12,7 +12,7 @@ def callback(ch, method, properties, body):
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
-    print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
+    print('nMsgID: {0} nTime difference between sent and received: {1}' \
                                     .format(getMsgId(topic), timediff))
                                     
 def on_message(client, userdata, msg):
@@ -33,12 +33,12 @@ def msg_size_test(broker, url, psize):
             msg_s = {'topic':'x', 'qos':0, 'cb':on_message}
             kwargs_s = {'timeout' : 20}
         else:
-            p_client = amqpClient(c, url)
-            s_client = amqpClient(c, url)
-            topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
-            kwargs_p = {'nr': 1, 'ival': 2}
+            p_client = amqpClient(1, url)
+            s_client = amqpClient(2, url)
+            topic = [ {'exchange': 'x', 'routing_key': '', 'psize': psize } ]
+            kwargs_p = {'nr': 10, 'ival': 1}
             msg_s = {'exchange': 'x', 'cb': callback, 'no_ack': True}
-            kwargs_s = {'timeout' : 30}
+            kwargs_s = {'timeout' : 20}
             
         p_client.connect()
         s_client.connect()
@@ -55,17 +55,58 @@ def msg_size_test(broker, url, psize):
 
 
 if __name__=="__main__":
-    times = []
-    psize = []
-    for i in range(0, 1000001, 100000):
-        timevals = []
-        time_med, time_mean, time_var = msg_size_test('mqtt', 'amqp://iotgroup4:iot4@192.168.0.3:5672', i)
-        times.append(time_med)
-        psize.append(i)
-
-    plt.plot(psize, times)
-    plt.title('Consumer, median time')
-    plt.xlabel('Message Size (bytes)')
-    plt.ylabel('Time (median)')
-    plt.show()
-    plt.savefig('pubVScon')
+    
+    # minimum message size
+    msg_min = 0
+    
+    # maximum message size
+    msg_max = 2000000
+    
+    # number of messages
+    msg_nr = 50
+    
+    # test repetisions
+    rep_nr = 5
+    
+    # protocol 
+    proto = 'amqp'
+    
+    # url
+    url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
+    
+    msg_ival = int((msg_max-msg_min)/(msg_nr-1))
+    msg_med_times  = []
+    msg_mean_times = []
+    msg_var_times  = []
+    msg_psize = range(msg_min, msg_max+1, msg_ival)
+    
+    med_mat = []
+    mean_mat = []
+    var_mat = []
+    for i in range(0,rep_nr):
+        med_vec  = []
+        mean_vec = []
+        var_vec  = []
+        for j in msg_psize:
+            print(j)
+            timevals = []
+            time_med, time_mean, time_var = msg_size_test(proto, url, j)
+            med_vec.append(time_med)
+            mean_vec.append(time_mean)
+            var_vec.append(time_var)
+        med_mat.append(med_vec)
+        mean_mat.append(mean_vec)
+        var_mat.append(var_vec)
+    
+    for i in range(0,rep_nr):
+        med = np.median([row[i] for row in med_mat])
+        mean = np.median([row[i] for row in mean_mat])
+        var = np.median([row[i] for row in var_mat])
+        msg_med_times.append(med)
+        msg_mean_times.append(mean)
+        msg_var_times.append(var)
+    
+    write_to_csv(msg_psize, msg_med_times,  '../csv/' + proto + '_msg_size_test_med',  proto + '_msg_size_test_med')
+    write_to_csv(msg_psize, msg_mean_times, '../csv/' + proto + '_msg_size_test_mean', proto + '_msg_size_test_mean')
+    write_to_csv(msg_psize, msg_var_times,  '../csv/' + proto + '_msg_size_test_var',  proto + '_msg_size_test_var')
+    
