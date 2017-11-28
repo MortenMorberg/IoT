@@ -30,12 +30,12 @@ class mqttClient(IClient):
         self.st = None
         url_str = os.environ.get(url) #, 'mqtt://localhost:1883')
         url_parse = urlparse(url_str)
-        print(url_parse.port)
-        print(url_parse.hostname)
-        print(url_parse.password)
-        print(url_parse.username)
+        #print(url_parse.port)
+        #print(url_parse.hostname)
+        #print(url_parse.password)
+        #print(url_parse.username)
         self.mqttc.username_pw_set('iotgroup4', 'iot4')
-        self.hostname = '192.168.43.104'
+        self.hostname = '2.104.13.126'
         self.port = 1883
         self.id = str(cid)
         

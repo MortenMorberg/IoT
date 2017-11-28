@@ -30,6 +30,9 @@ class amqpClient(IClient):
             psize = pubmsg[i].pop('psize', 10) #TODO: 10 has been chosen for default size in publish if no psize is given
             for j in range( kwargs['nr'] ): # for the number of times a msg should be published
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
+                if 'sent_list' in kwargs:
+                    kwargs['sent_list'].append(pubmsg[i]['body'])
+                    print(pubmsg[i]['body'])
                 self.pChannel.basic_publish( **pubmsg[i] )
                 #print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
@@ -61,8 +64,7 @@ class amqpClient(IClient):
         self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
 
         self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
-
-        result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False))
+        result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
         queueName = result.method.queue
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
