@@ -51,10 +51,11 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 
         for s in s_clients:
             s.subscribe(msg_s, kwargs_s)
-        time.sleep(1)
+        time.sleep(20)
         for p in p_clients:
             p.publish(topic, kwargs_p)
 
+        time.sleep(10)
         ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
         for s in s_clients:
             s.waitForClient()
@@ -66,19 +67,30 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 
 
 if __name__=="__main__":
-        
-    pub_min = 1
-    pub_max = 10
-    pub_nr = 2
-    rep_nr = 2
+     
+    #minimum number of subscribers
+    sub_min = 10
+    
+    #maximum number of subscribers
+    sub_max = 350
+    
+    # number of intervals
+    sub_nr = 10
+    
+    #repetition number
+    rep_nr = 5
+    
+    # protocol name
     proto = 'mqtt'
+    
+    # url
     url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
     
-    pub_ival = int((pub_max-pub_min)/(pub_nr-1))
-    pub_vars = []
-    pub_med = []
-    pub_mean = []
-    pub_xval = range(pub_min, pub_max+1, pub_ival)
+    sub_ival = int((sub_max-sub_min)/(sub_nr-1))
+    sub_vars = []
+    sub_med = []
+    sub_mean = []
+    sub_xval = range(sub_min, sub_max+1, sub_ival)
     
     med_mat = []
     mean_mat = []
@@ -87,7 +99,7 @@ if __name__=="__main__":
         med_vec  = []
         mean_vec = []
         var_vec  = []
-        for j in pub_xval:
+        for j in sub_xval:
             print(j)
             timevals = []
             time_med, time_mean, time_var = var_sub_test(proto, url, 1, j)
@@ -95,21 +107,18 @@ if __name__=="__main__":
             mean_vec.append(time_mean)
             var_vec.append(time_var)
         med_mat.append(med_vec)
-        print(med_mat)
         mean_mat.append(mean_vec)
-        print(mean_mat)
         var_mat.append(var_vec)
-        print(var_mat)
-    
-    for i in range(0,rep_nr):
+        
+    for i in range(0,len(sub_xval)):
         med = np.median([row[i] for row in med_mat])
         mean = np.median([row[i] for row in mean_mat])
         var = np.median([row[i] for row in var_mat])
-        pub_med.append(med)
-        pub_mean.append(mean)
-        pub_vars.append(var)
+        sub_med.append(med)
+        sub_mean.append(mean)
+        sub_vars.append(var)
     
-    write_to_csv(pub_xval, pub_med,  '../csv/' + proto + '_var_sub_test_med',  proto + '_var_sub_test_med')
-    write_to_csv(pub_xval, pub_mean, '../csv/' + proto + '_var_sub_test_mean', proto + '_var_sub_test_mean')
-    write_to_csv(pub_xval, pub_vars,  '../csv/' + proto + '_var_sub_test_var',  proto + '_var_sub_test_var')
+    write_to_csv(sub_xval, sub_med,  '../csv/' + proto + '_var_sub_test_med',  proto + '_var_sub_test_med')
+    write_to_csv(sub_xval, sub_mean, '../csv/' + proto + '_var_sub_test_mean', proto + '_var_sub_test_mean')
+    write_to_csv(sub_xval, sub_vars,  '../csv/' + proto + '_var_sub_test_var',  proto + '_var_sub_test_var')
             

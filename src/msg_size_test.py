@@ -98,7 +98,7 @@ if __name__=="__main__":
         mean_mat.append(mean_vec)
         var_mat.append(var_vec)
     
-    for i in range(0,rep_nr):
+    for i in range(0,len(msg_psize)):
         med = np.median([row[i] for row in med_mat])
         mean = np.median([row[i] for row in mean_mat])
         var = np.median([row[i] for row in var_mat])
