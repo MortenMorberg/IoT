@@ -117,6 +117,10 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
         s_client = None
         
         if( broker == 'mqtt' or broker == 'amqp' ):
+
+            ##
+            ##
+
             client = None
             topic = None
             kwargs = None
@@ -135,7 +139,7 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                     topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                     kwargs_p = {'nr': 10, 'ival': interval}
                     msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True, 'auto_delete': True}
-                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 100}} # queue size limited to 200b
+                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 100, "x-dead-letter-exchange": 'deadletterexchange'}} # queue size limited to 200b
                 
                 if( j < i ):
                     p_clients.append(client)    
@@ -143,10 +147,12 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                 else:
                     s_client = client
                     subs += 1
+
                 client.connect()
 
             print('Publishers: {0} Subscribers: {1}' .format( pubs, subs ))
             s_client.subscribe(msg_s, kwargs_s)
+            s_client.sChannel.exchange_declare("deadletterexchange", "direct")
 
             time.sleep(1)
 
@@ -199,7 +205,7 @@ if __name__=="__main__":
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
+        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=100, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
         #msg_interval_test(broker='mqtt', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
     
     elif( case == 'all'):
