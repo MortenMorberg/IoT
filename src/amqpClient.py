@@ -3,6 +3,7 @@ from threading import Thread
 from topic import *
 import time
 import pika
+import copy
 
 class amqpClient(IClient):
 
