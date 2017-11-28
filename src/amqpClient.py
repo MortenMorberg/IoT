@@ -43,9 +43,10 @@ class amqpClient(IClient):
         if ( self.pThread == None ) or ( not self.pThread.is_alive() ): 
             if self.pChannel == None :
                 self.pChannel = self.connection.channel() # start a channel
-            qos = pubmsg[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
+            pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
+            qos = pubmsg_copy[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
             self.pChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
-            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg} )
+            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg_copy} )
             self.pThread.start()
         else:
             status = False
@@ -82,6 +83,7 @@ class amqpClient(IClient):
             self.pThread.join()
         if self.sThread != None:
             self.sThread.join()
+        self.disconnect()
         
 
     def __exit__(self, exc_type, exc_value, traceback):
