@@ -62,7 +62,7 @@ class amqpClient(IClient):
 
         self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
 
-        result = self.sChannel.queue_declare(exclusive=True)
+        result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False))
         queueName = result.method.queue
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
