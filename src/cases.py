@@ -21,10 +21,17 @@ def callback_pub_sub_test(ch, method, properties, body):
 def callback_msg_interval(ch, method, properties, body):
     global recv_msgs, timevals
     topic = body.decode('utf-8')
+    print(topic)
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
     recv_msgs += 1
     #print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
+
+def callback_msg_interval_mqtt(client, userdata, msg):
+    global recv_msgs, timevals
+    timediff = gettimediff(msg.payload, time.time())
+    timevals.append(timediff)
+    recv_msgs += 1
 
 def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
     if( broker == 'mqtt' or broker == 'amqp' ):
@@ -48,7 +55,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                 kwargs_p = {'nr': 1, 'ival': interval}
                 msg_s = {'exchange': 'x', 'cb': call_back, 'no_ack': True, 'auto_delete': True}
-                kwargs_s = {'timeout' : 30}
+                kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 200}} # queue size limited to 200b
 
             if( c < nr_pub ):
                 p_clients.append(client)
@@ -85,7 +92,7 @@ def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1, showplot=False
         times.append(timeval)
         ratios.append(ratioval)
 
-    write_to_csv(ratios, times, '../csv/{0}'.format(fileName))
+    write_to_csv(ratios, times, '../csv/{0}'.format(fileName), 'Pub vs con (median time)')
 
     if( showplot ):
         x, y = read_from_csv('../csv/{0}'.format(fileName))
@@ -121,14 +128,14 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                     client = mqttClient(j, url)
                     topic = {'topic': 'x', 'psize': 1, 'qos':0 }
                     kwargs_p = {'nr':10, 'ival': interval}
-                    msg_s = {'topic':'x', 'qos':0, 'cb': callback_msg_interval}
+                    msg_s = {'topic':'x', 'qos':0, 'cb': callback_msg_interval_mqtt}
                     kwargs_s = {'timeout' : 30}
                 else:
                     client = amqpClient(j, 'amqp://{0}'.format(url))
                     topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                     kwargs_p = {'nr': 10, 'ival': interval}
                     msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True, 'auto_delete': True}
-                    kwargs_s = {'timeout' : 30}
+                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 100}} # queue size limited to 200b
                 
                 if( j < i ):
                     p_clients.append(client)    
@@ -159,8 +166,8 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
 
             y_times.append(np.median(timevals))
 
-    write_to_csv(x_msg_s, y_packetloss, '../csv/{0}'.format(fileName[0]), 'test')
-    write_to_csv(x_msg_s, y_times, '../csv/{0}'.format(fileName[1]), 'test2')
+    write_to_csv(x_msg_s, y_packetloss, '../csv/{0}'.format(fileName[0]), 'Packet loss test')
+    write_to_csv(x_msg_s, y_times, '../csv/{0}'.format(fileName[1]), 'Median receive time single consumer')
 
     if( showplot ):
         x_1, y_1 = read_from_csv('../csv/{0}'.format(fileName[0]))
@@ -179,6 +186,7 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
 
 
 if __name__=="__main__":
+    
     case = None
     if( len(sys.argv) < 2 ):
         print('No inline args! Specify case')
@@ -187,12 +195,13 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50, stepsize=1, fileName='pubSubRatioTest', showplot=True)
+        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=400, stepsize=1, fileName='pubSubRatioTest', showplot=False)
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.1, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=True)
-
+        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
+        #msg_interval_test(broker='mqtt', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
+    
     elif( case == 'all'):
         msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50, stepsize=10, interval=0.1, fileName='msgIntervalLongTest')
         pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50, stepsize=1, fileName='pubSubRatioLongTest')
