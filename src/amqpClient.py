@@ -65,8 +65,7 @@ class amqpClient(IClient):
         self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
 
         self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
-
-        result = self.sChannel.queue_declare(exclusive=True, arguments=kwargs.get('arguments'))
+        result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
         queueName = result.method.queue
 
         self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
