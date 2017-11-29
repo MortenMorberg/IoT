@@ -4,6 +4,7 @@ from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import read_from_csv, write_to_csv
+import resource
 
 import time
 from topic import *
@@ -21,7 +22,6 @@ def callback_pub_sub_test(ch, method, properties, body):
 def callback_msg_interval(ch, method, properties, body):
     global recv_msgs, timevals
     topic = body.decode('utf-8')
-    print(topic)
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
     recv_msgs += 1
@@ -84,7 +84,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
 
     return np.median(timevals), nr_pub-nr_con
 
-def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1, showplot=False):
+def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1):
     times = []
     ratios = []
     for i in range(1, iterations):
@@ -94,20 +94,11 @@ def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1, showplot=False
 
     write_to_csv(ratios, times, '../csv/{0}'.format(fileName), 'Pub vs con (median time)')
 
-    if( showplot ):
-        x, y = read_from_csv('../csv/{0}'.format(fileName))
-        plt.plot(x, y)
-        plt.title('Pub vs con, median time')
-        plt.xlabel('Publishers/Consumers (ratio)')
-        plt.ylabel('Time (median)')
-        plt.show()
-
-def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=0.01, showplot=False):
+def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=0.01):
     y_packetloss = []
     x_msg_s = []
     
     y_times = []
-
     interval = 0.1
     for i in range(10, iterations + 1, stepsize):
         global recv_msgs, timevals
@@ -117,10 +108,6 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
         s_client = None
         
         if( broker == 'mqtt' or broker == 'amqp' ):
-
-            ##
-            ##
-
             client = None
             topic = None
             kwargs = None
@@ -139,7 +126,7 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                     topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                     kwargs_p = {'nr': 10, 'ival': interval}
                     msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True, 'auto_delete': True}
-                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 100, "x-dead-letter-exchange": 'deadletterexchange'}} # queue size limited to 200b
+                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 200, "x-dead-letter-exchange": 'deadletterexchange'}} # queue size limited to 200b
                 
                 if( j < i ):
                     p_clients.append(client)    
@@ -175,24 +162,15 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
     write_to_csv(x_msg_s, y_packetloss, '../csv/{0}'.format(fileName[0]), 'Packet loss test')
     write_to_csv(x_msg_s, y_times, '../csv/{0}'.format(fileName[1]), 'Median receive time single consumer')
 
-    if( showplot ):
-        x_1, y_1 = read_from_csv('../csv/{0}'.format(fileName[0]))
-        plt.plot(x_1, y_1)
-        plt.title('Packet loss test')
-        plt.xlabel('Messages/s')
-        plt.ylabel('Packets lost')
-        plt.show()
-
-        x_2, y_2 = read_from_csv('../csv/{0}'.format(fileName[1]))
-        plt.plot(x_2, y_2)
-        plt.title('Packet loss test')
-        plt.xlabel('Messages/s')
-        plt.ylabel('Median receive times')
-        plt.show()
-
 
 if __name__=="__main__":
-    
+    #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
+    resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+
+    broker = 'amqp'
+    device = 'pi2'
+    date = '29_11'
+
     case = None
     if( len(sys.argv) < 2 ):
         print('No inline args! Specify case')
@@ -201,16 +179,17 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=400, stepsize=1, fileName='pubSubRatioTest', showplot=False)
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=100, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
-        #msg_interval_test(broker='mqtt', url='iotgroup4:iot4@2.104.13.126:5672', iterations=20, stepsize=10, interval=0.01, fileName=['msgIntervalTest', 'msgTimeTest'], showplot=False)
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=10, interval=0.01, \
+                                                fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
     
     elif( case == 'all'):
-        msg_interval_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50, stepsize=10, interval=0.1, fileName='msgIntervalLongTest')
-        pub_sub_test(broker='amqp', url='iotgroup4:iot4@2.104.13.126:5672', iterations=50, stepsize=1, fileName='pubSubRatioLongTest')
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=10, interval=0.01, \
+                                                fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     else:
         print('Exit')

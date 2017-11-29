@@ -3,6 +3,7 @@ from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import write_to_csv
+import resource
 
 import time
 from topic import *
@@ -67,12 +68,13 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 
 
 if __name__=="__main__":
-     
+    #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+
     #minimum number of subscribers
     sub_min = 10
     
     #maximum number of subscribers
-    sub_max = 350
+    sub_max = 950
     
     # number of intervals
     sub_nr = 10

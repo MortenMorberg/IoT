@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from csv_helper import write_to_csv
 import time
 from topic import *
+import resource
 
 timevals = []
 
@@ -55,7 +56,8 @@ def msg_size_test(broker, url, psize):
 
 
 if __name__=="__main__":
-    
+    #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+
     # minimum message size
     msg_min = 0
     
@@ -63,13 +65,13 @@ if __name__=="__main__":
     msg_max = 2000000
     
     # number of messages
-    msg_nr = 50
+    msg_nr = 20
     
     # test repetisions
     rep_nr = 5
     
     # protocol 
-    proto = 'amqp'
+    proto = 'mqtt'
     
     # url
     url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
