@@ -44,7 +44,7 @@ class mqttClient(IClient):
         #self.mqttc.on_log = self.on_log
         
     def connect(self):
-        self.mqttc.connect(self.hostname, self.port)
+        self.mqttc.connect(self.hostname, self.port, keepalive=5)
     
     def disconnect(self):
         self.mqttc.disconnect()
@@ -84,16 +84,18 @@ class mqttClient(IClient):
             self.pt.join()
         if self.st != None:
             self.st.join()
+        self.disconnect()
     '''
     Callbacks
     '''
     def on_disconnect(self, client, userdata, rc):
-        print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
+        #print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
         self.mqttc.loop_stop()
         
     def on_connect(self, client, userdata, flags, rc):
-        print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
+        #print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
         self.mqttc.loop_start()
     
     def on_log(self, client, obj, level, string):
-        print(string)
+        #print(string)
+        pass

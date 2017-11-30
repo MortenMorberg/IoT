@@ -139,7 +139,9 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
 
             print('Publishers: {0} Subscribers: {1}' .format( pubs, subs ))
             s_client.subscribe(msg_s, kwargs_s)
-            s_client.sChannel.exchange_declare("deadletterexchange", "direct")
+            
+            if(broker == 'amqp'):
+                s_client.sChannel.exchange_declare("deadletterexchange", "direct") #force to drop packets if queue is full
 
             time.sleep(1)
 
@@ -152,7 +154,7 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
             for p in p_clients:
                 p.waitForClient()
 
-            sent_msgs = 10 * i
+            sent_msgs = i / interval
 
             x_msg_s.append(i * interval)
             y_packetloss.append(sent_msgs - recv_msgs)
@@ -167,9 +169,9 @@ if __name__=="__main__":
     #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
     resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
-    broker = 'amqp'
+    broker = 'mqtt'
     device = 'pi2'
-    date = '29_11'
+    date = '30_11'
 
     case = None
     if( len(sys.argv) < 2 ):
@@ -183,7 +185,7 @@ if __name__=="__main__":
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=10, interval=0.01, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=360, stepsize=10, interval=0.01, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
     
     elif( case == 'all'):
