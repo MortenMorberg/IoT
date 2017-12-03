@@ -169,9 +169,9 @@ if __name__=="__main__":
     #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
     resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
-    broker = 'mqtt'
-    device = 'pi2'
-    date = '30_11'
+    broker = 'amqp'
+    device = 'piB'
+    date = '03_12'
 
     case = None
     if( len(sys.argv) < 2 ):
@@ -181,11 +181,11 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=360, stepsize=10, interval=0.01, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=10, interval=0.01, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
     
     elif( case == 'all'):
