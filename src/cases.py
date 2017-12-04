@@ -89,8 +89,9 @@ def pub_sub_test(broker, url, fileName, iterations=1, stepsize=1):
     ratios = []
     for i in range(1, iterations):
         timeval, ratioval = pub_sub_run(broker, url, i, iterations - i, callback_pub_sub_test, interval=stepsize)
-        times.append(timeval)
-        ratios.append(ratioval)
+        if( not np.isnan(timeval) ):
+            times.append(timeval)
+            ratios.append(ratioval)
 
     write_to_csv(ratios, times, '../csv/{0}'.format(fileName), 'Pub vs con (median time)')
 
