@@ -97,6 +97,7 @@ class amqpClient(IClient):
                 self.disconnect()
                 self.connection = None
                 print('AMQP Channel Connection error: {}'.format(err))
+        print(str(self.id)+' subscribed')
 
     def start_subscribe_timeout(self, kwargs):
         if self.connection != None:

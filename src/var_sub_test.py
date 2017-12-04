@@ -71,12 +71,12 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 if __name__=="__main__":
 
     # protocol name
-    proto = 'amqp'
+    proto = 'mqtt'
     
     # url
     url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
     
-    time_med, time_mean, time_var, msg_nr = var_sub_test(proto, url, 1, 300)
+    time_med, time_mean, time_var, msg_nr = var_sub_test(proto, url, 1, 1000)
     
     print(msg_nr)
 '''
