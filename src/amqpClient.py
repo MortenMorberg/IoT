@@ -31,6 +31,7 @@ class amqpClient(IClient):
                 self.connection = None
                 print('AMQP BlockingConnection error: {}'.format(err))
             retry -= 1
+        print(str(self.id)+' connected')
 
     def isConnected(self):
         return self.connection != None
@@ -90,7 +91,6 @@ class amqpClient(IClient):
 
                 self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
                 self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
-                self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
                 self.sThread = Thread( target=self.subscribeThread )
                 self.sThread.start()
             except Exception as err:
@@ -98,9 +98,14 @@ class amqpClient(IClient):
                 self.connection = None
                 print('AMQP Channel Connection error: {}'.format(err))
 
+    def start_subscribe_timeout(self, kwargs):
+        if self.connection != None:
+            self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
+
     def disconnect(self):
         if self.connection != None:
             self.connection.close()
+        print(str(self.id)+' disconnected')
         
     def waitForClient(self):
         if self.pThread != None:
@@ -110,4 +115,5 @@ class amqpClient(IClient):
         self.disconnect()
         
     def __exit__(self, exc_type, exc_value, traceback):
-        self.disconnect()
+        if self.connection != None:
+            self.disconnect()
