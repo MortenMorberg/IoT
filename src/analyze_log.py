@@ -22,8 +22,24 @@ if __name__=="__main__":
 
     # Analyze log file
 
+    # high watermark set!
+    memory_cap = []
 
+    # entire log file, where each element is a line from the log file
+    log_file = []
 
+    with open('../src/log/rabbitmq.log') as f:
+        for line in f:
+            log_file.append(line)
+        f.close()
 
+    for l in range(len(log_file)):
+        if 'vm_memory_high_watermark set' in log_file[l]:
+            memory_cap.append(log_file[l-1] + log_file[l])
+
+    for m in memory_cap:
+        print(m)
+
+    print(len(m))
 
 
