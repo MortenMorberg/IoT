@@ -49,7 +49,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
                 topic = {'topic': 'x', 'psize': 1, 'qos':0 }
                 kwargs_p = {'nr':10, 'ival': interval}
                 msg_s = {'topic':'x', 'qos':0, 'cb':call_back}
-                kwargs_s = {'timeout' : 30}
+                kwargs_s = {'timeout' : 20}
             else:
                 client = amqpClient(c, 'amqp://{0}'.format(url))
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
@@ -70,6 +70,10 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
 
         for s in s_clients:
             s.subscribe(msg_s, kwargs_s)
+
+        if(broker  == 'amqp'):
+            for s in s_clients:
+                s.start_subscribe_timeout(kwargs_s)
 
         time.sleep(1)
 
@@ -101,13 +105,13 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
     x_msg_s = []
     
     y_times = []
-    interval = 0.1
     for i in range(10, iterations + 1, stepsize):
         global recv_msgs, timevals
         recv_msgs = 0
         timevals = []
         p_clients = []
         s_client = None
+        msgs_pr_publisher = i*10
         
         if( broker == 'mqtt' or broker == 'amqp' ):
             client = None
@@ -120,15 +124,16 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                 if( broker == 'mqtt' ):
                     client = mqttClient(j, url)
                     topic = {'topic': 'x', 'psize': 1, 'qos':0 }
-                    kwargs_p = {'nr':10, 'ival': interval}
+                    kwargs_p = {'nr':msgs_pr_publisher, 'ival': interval}
                     msg_s = {'topic':'x', 'qos':0, 'cb': callback_msg_interval_mqtt}
                     kwargs_s = {'timeout' : 30}
                 else:
                     client = amqpClient(j, 'amqp://{0}'.format(url))
                     topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
-                    kwargs_p = {'nr': 10, 'ival': interval}
+                    kwargs_p = {'nr': msgs_pr_publisher, 'ival': interval}
                     msg_s = {'exchange': 'x', 'cb': callback_msg_interval, 'no_ack': True, 'auto_delete': True}
-                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 200, "x-dead-letter-exchange": 'deadletterexchange'}} # queue size limited to 200b
+                    kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length' : 100000}} # queue size limited to 200b
+                    #kwargs_s = {'timeout' : 30} # queue size limited to 200b
                 
                 if( j < i ):
                     p_clients.append(client)    
@@ -144,10 +149,10 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                 s_client.connect()
 
             s_client.subscribe(msg_s, kwargs_s)
-            
+
             if(broker == 'amqp'):
                 s_client.sChannel.exchange_declare("deadletterexchange", "direct") #force to drop packets if queue is full
-
+                s_client.start_subscribe_timeout(kwargs_s)
             time.sleep(1)
 
             for p in p_clients:
@@ -162,7 +167,11 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
             sent_msgs = i / interval
 
             x_msg_s.append(i * interval)
-            y_packetloss.append(sent_msgs - recv_msgs)
+
+            if( sent_msgs > 0 ):
+                y_packetloss.append( recv_msgs / sent_msgs)
+            else:
+                y_packetloss.append(0)
 
             y_times.append(np.median(timevals))
 
@@ -186,15 +195,15 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=400, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=10, interval=0.01, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=10, interval=0.1, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
     
     elif( case == 'all'):
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=10, interval=0.01, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=10, interval=0.1, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
         pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=1000, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
