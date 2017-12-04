@@ -47,7 +47,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
             if( broker == 'mqtt' ):
                 client = mqttClient(c, url)
                 topic = {'topic': 'x', 'psize': 1, 'qos':0 }
-                kwargs_p = {'nr':10, 'ival': interval}
+                kwargs_p = {'nr':1, 'ival': interval}
                 msg_s = {'topic':'x', 'qos':0, 'cb':call_back}
                 kwargs_s = {'timeout' : 20}
             else:

@@ -67,16 +67,16 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
             p.waitForClient()
 
     return np.median(timevals), np.mean(timevals), np.var(timevals), len(timevals)
-
+'''
 if __name__=="__main__":
 
     # protocol name
-    proto = 'amqp'
+    proto = 'mqtt'
     
     # url
     url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
     
-    time_med, time_mean, time_var, msg_nr = var_sub_test(proto, url, 1, 300)
+    time_med, time_mean, time_var, msg_nr = var_sub_test(proto, url, 1, 1000)
     
     print(msg_nr)
 '''
@@ -84,16 +84,16 @@ if __name__=="__main__":
     #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
     #minimum number of subscribers
-    sub_min = 1
+    sub_min = 10
     
     #maximum number of subscribers
-    sub_max = 10
+    sub_max = 800
     
     # number of intervals
-    sub_nr = 2
+    sub_nr = 20
     
     #repetition number
-    rep_nr = 1
+    rep_nr = 5
     
     # protocol name
     proto = 'mqtt'
@@ -136,4 +136,4 @@ if __name__=="__main__":
     write_to_csv(sub_xval, sub_med,  '../csv/' + proto + '_var_sub_test_med',  proto + '_var_sub_test_med')
     write_to_csv(sub_xval, sub_mean, '../csv/' + proto + '_var_sub_test_mean', proto + '_var_sub_test_mean')
     write_to_csv(sub_xval, sub_vars,  '../csv/' + proto + '_var_sub_test_var',  proto + '_var_sub_test_var')
-     '''       
+        
