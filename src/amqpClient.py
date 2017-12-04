@@ -53,13 +53,19 @@ class amqpClient(IClient):
     def publish(self, pubmsg, kwargs):
         status = True
         if ( ( self.pThread == None ) or ( not self.pThread.is_alive() ) ) and self.connection != None: 
-            if self.pChannel == None :
-                self.pChannel = self.connection.channel() # start a channel
-            pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
-            qos = pubmsg_copy[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
-            self.pChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
-            self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg_copy} )
-            self.pThread.start()
+            try:
+                if self.pChannel == None :
+                    self.pChannel = self.connection.channel() # start a channel
+                pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
+                qos = pubmsg_copy[0].pop('qos',{'pre_c' : 0, 'pre_s' : 0})
+                self.pChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
+                self.pThread = Thread( target=self.publishThread, kwargs={'kwargs' : kwargs, 'pubmsg' : pubmsg_copy} )
+                self.pThread.start()
+            except Exception as err:
+                self.disconnect()
+                self.connection = None
+                print('AMQP Channel Connection error: {}'.format(err))
+                status = False
         else:
             status = False
 
@@ -73,19 +79,24 @@ class amqpClient(IClient):
     def subscribe(self, submsg, kwargs):
         if self.connection != None:
             #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
-            self.sChannel = self.connection.channel() # start a channel
-            qos = submsg.pop('qos',{'pre_c' : 0, 'pre_s' : 0, 'no_ack' : False})
-            self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
+            try:
+                self.sChannel = self.connection.channel() # start a channel
+                qos = submsg.pop('qos',{'pre_c' : 0, 'pre_s' : 0, 'no_ack' : False})
+                self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
 
-            self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
-            result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
-            queueName = result.method.queue
+                self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
+                result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
+                queueName = result.method.queue
 
-            self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
-            self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
-            self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
-            self.sThread = Thread( target=self.subscribeThread )
-            self.sThread.start()
+                self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
+                self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
+                self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
+                self.sThread = Thread( target=self.subscribeThread )
+                self.sThread.start()
+            except Exception as err:
+                self.disconnect()
+                self.connection = None
+                print('AMQP Channel Connection error: {}'.format(err))
 
     def disconnect(self):
         if self.connection != None:
