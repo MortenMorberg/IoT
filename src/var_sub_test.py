@@ -3,7 +3,7 @@ from amqpClient import amqpClient
 from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import write_to_csv
-import resource
+#import resource
 
 import time
 from topic import *
@@ -14,7 +14,7 @@ def callback(ch, method, properties, body):
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
-    print('\nMsgID: {0} \nTime difference between sent and received: {1}\n' \
+    print('MsgID: {0} Time difference between sent and received: {1}' \
                                     .format(getMsgId(topic), timediff))
                                    
 def on_message(client, userdata, msg):
@@ -36,13 +36,13 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
                 topic = {'topic': 'x', 'psize': 1, 'qos':0 }
                 kwargs_p = {'nr':1, 'ival':1}
                 msg_s = {'topic':'x', 'qos':0, 'cb':on_message}
-                kwargs_s = {'timeout' : 30}
+                kwargs_s = {'timeout' : 10}
             else:
                 client = amqpClient(c, url)
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                 kwargs_p = {'nr': 1, 'ival': 1}
                 msg_s = {'exchange': 'x', 'cb': callback, 'no_ack': True}
-                kwargs_s = {'timeout' : 30}
+                kwargs_s = {'timeout' : 10}
 
             if( c < nr_pub ):
                 p_clients.append(client)
@@ -52,11 +52,13 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 
         for s in s_clients:
             s.subscribe(msg_s, kwargs_s)
-        time.sleep(20)
+        if(broker  == 'amqp'):
+            for s in s_clients:
+                s.start_subscribe_timeout(kwargs_s) 
+        time.sleep(1)
         for p in p_clients:
             p.publish(topic, kwargs_p)
 
-        time.sleep(10)
         ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
         for s in s_clients:
             s.waitForClient()
@@ -64,23 +66,34 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
         for p in p_clients:
             p.waitForClient()
 
-    return np.median(timevals), np.mean(timevals), np.var(timevals)
+    return np.median(timevals), np.mean(timevals), np.var(timevals), len(timevals)
 
+if __name__=="__main__":
 
+    # protocol name
+    proto = 'amqp'
+    
+    # url
+    url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
+    
+    time_med, time_mean, time_var, msg_nr = var_sub_test(proto, url, 1, 300)
+    
+    print(msg_nr)
+'''
 if __name__=="__main__":
     #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
     #minimum number of subscribers
-    sub_min = 10
+    sub_min = 1
     
     #maximum number of subscribers
-    sub_max = 950
+    sub_max = 10
     
     # number of intervals
-    sub_nr = 10
+    sub_nr = 2
     
     #repetition number
-    rep_nr = 5
+    rep_nr = 1
     
     # protocol name
     proto = 'mqtt'
@@ -123,4 +136,4 @@ if __name__=="__main__":
     write_to_csv(sub_xval, sub_med,  '../csv/' + proto + '_var_sub_test_med',  proto + '_var_sub_test_med')
     write_to_csv(sub_xval, sub_mean, '../csv/' + proto + '_var_sub_test_mean', proto + '_var_sub_test_mean')
     write_to_csv(sub_xval, sub_vars,  '../csv/' + proto + '_var_sub_test_var',  proto + '_var_sub_test_var')
-            
+     '''       

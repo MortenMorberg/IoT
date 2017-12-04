@@ -28,6 +28,8 @@ class mqttClient(IClient):
         self.mqttc = mqtt.Client()
         self.pt = None
         self.st = None
+        self.connected = False
+        self.subscribed = False
         url_str = os.environ.get(url) #, 'mqtt://localhost:1883')
         url_parse = urlparse(url_str)
         #print(url_parse.port)
@@ -41,17 +43,23 @@ class mqttClient(IClient):
         
         self.mqttc.on_connect = self.on_connect
         self.mqttc.on_disconnect = self.on_disconnect
+        self.mqttc.on_subscribe = self.on_subscribe
         #self.mqttc.on_log = self.on_log
         
     def connect(self):
-        self.mqttc.connect(self.hostname, self.port, keepalive=5)
-    
+        self.mqttc.connect(self.hostname, self.port )
+        self.mqttc.loop_start()
+        self.waitForConnect()
+        
     def disconnect(self):
+        self.mqttc.loop_stop()
         self.mqttc.disconnect()
     
 	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
     def subscribe(self, topic, kwargs):
         self.mqttc.on_message = topic['cb']
+        self.mqttc.subscribe(topic['topic'], topic['qos'])
+        self.waitForSubscribed()
         self.st = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
         self.st.start();
 	
@@ -62,40 +70,52 @@ class mqttClient(IClient):
     
 	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
     def publishfunc(self, topic, kwargs):
-        self.mqttc.loop_start()
+        #self.mqttc.loop_start()
         for i in range(kwargs['nr']):
             self.mqttc.publish(topic['topic'], gettopic(self.id, i, topic['psize']), topic['qos'])
             time.sleep(kwargs['ival'])
-        self.mqttc.loop_stop()
-        self.disconnect()
+        #self.mqttc.loop_stop()
+        #self.disconnect()
     
 	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
     def subscribefunc(self, topic, kwargs):
         self.mqttc.subscribe(topic['topic'], topic['qos'])
-        self.mqttc.loop_start()
+        #self.mqttc.loop_start()
         
         time.sleep(kwargs['timeout'])
         
-        self.mqttc.loop_stop()
-        self.disconnect()
+        #self.mqttc.loop_stop()
+        #self.disconnect()
         
     def waitForClient(self):
         if self.pt != None:
             self.pt.join()
         if self.st != None:
             self.st.join()
-        self.disconnect()
+     
+    def waitForConnect(self):
+        while(self.connected == False):
+            pass
+    
+    def waitForSubscribed(self):
+        while(self.subscribed == False):
+            pass
     '''
     Callbacks
     '''
     def on_disconnect(self, client, userdata, rc):
-        #print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
+        print(self.id + 'disconnected with the result code ' + mqtt.connack_string(rc))
         self.mqttc.loop_stop()
         
     def on_connect(self, client, userdata, flags, rc):
-        #print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
+        print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
+        self.connected = True
         self.mqttc.loop_start()
     
     def on_log(self, client, obj, level, string):
         #print(string)
         pass
+    
+    def on_subscribe(self, client, userdata, mid, granted_qos):
+        print(str(self.id)+'on_suscribe')
+        self.subscribed = True

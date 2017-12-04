@@ -31,6 +31,7 @@ class amqpClient(IClient):
                 self.connection = None
                 print('AMQP BlockingConnection error: {}'.format(err))
             retry -= 1
+        print(str(self.id)+' connected')
 
     def isConnected(self):
         return self.connection != None
@@ -104,6 +105,7 @@ class amqpClient(IClient):
     def disconnect(self):
         if self.connection != None:
             self.connection.close()
+        print(str(self.id)+' disconnected')
         
     def waitForClient(self):
         if self.pThread != None:
