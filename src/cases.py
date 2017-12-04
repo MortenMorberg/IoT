@@ -55,7 +55,8 @@ def pub_sub_run(broker, url, nr_pub, nr_con, call_back, interval=1 ):
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
                 kwargs_p = {'nr': 1, 'ival': interval}
                 msg_s = {'exchange': 'x', 'cb': call_back, 'no_ack': True, 'auto_delete': True}
-                kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 200}} # queue size limited to 200b
+                #kwargs_s = {'timeout' : 30, 'arguments' : {'x-max-length-bytes' : 200}} # queue size limited to 200b
+                kwargs_s = {'timeout' : 30}
 
             if( c < nr_pub ):
                 p_clients.append(client)
@@ -139,6 +140,9 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
                 client.connect()
 
             print('Publishers: {0} Subscribers: {1}' .format( pubs, subs ))
+            if (not s_client.isConnected()):
+                s_client.connect()
+
             s_client.subscribe(msg_s, kwargs_s)
             
             if(broker == 'amqp'):
@@ -172,7 +176,7 @@ if __name__=="__main__":
 
     broker = 'amqp'
     device = 'piB'
-    date = '03_12'
+    date = '04_12'
 
     case = None
     if( len(sys.argv) < 2 ):
@@ -182,7 +186,7 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test')
-        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=800, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@2.104.13.126:5672', iterations=400, stepsize=1, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
