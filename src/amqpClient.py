@@ -22,7 +22,18 @@ class amqpClient(IClient):
     def connect(self):
         self.params = pika.URLParameters(self.url)
         self.params.socket_timeout = 5
-        self.connection = pika.BlockingConnection(parameters=self.params)
+        retry = 100
+        while( retry != 0 ):
+            try:
+                self.connection = pika.BlockingConnection(parameters=self.params)
+                break
+            except Exception as err:
+                self.connection = None
+                print('AMQP BlockingConnection error: {}'.format(err))
+            retry -= 1
+
+    def isConnected(self):
+        return self.connection != None
 
     def publishThread(self, pubmsg, kwargs):
         # TODO: should it be more randomly determined?
@@ -41,7 +52,7 @@ class amqpClient(IClient):
 
     def publish(self, pubmsg, kwargs):
         status = True
-        if ( self.pThread == None ) or ( not self.pThread.is_alive() ): 
+        if ( ( self.pThread == None ) or ( not self.pThread.is_alive() ) ) and self.connection != None: 
             if self.pChannel == None :
                 self.pChannel = self.connection.channel() # start a channel
             pubmsg_copy = copy.deepcopy(pubmsg) # makes it possible to reuse pubmsg
@@ -60,23 +71,25 @@ class amqpClient(IClient):
         #print('Ended consuming')
 
     def subscribe(self, submsg, kwargs):
-        #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
-        self.sChannel = self.connection.channel() # start a channel
-        qos = submsg.pop('qos',{'pre_c' : 0, 'pre_s' : 0, 'no_ack' : False})
-        self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
+        if self.connection != None:
+            #self.channel.basic_consume(consumer_callback=calback,queue=queue,no_ack=True, exclusive=False,consumer_tag=None)  
+            self.sChannel = self.connection.channel() # start a channel
+            qos = submsg.pop('qos',{'pre_c' : 0, 'pre_s' : 0, 'no_ack' : False})
+            self.sChannel.basic_qos(prefetch_size=qos['pre_s'], prefetch_count=qos['pre_c'])
 
-        self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
-        result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
-        queueName = result.method.queue
+            self.sChannel.exchange_declare(exchange=submsg['exchange'], exchange_type='fanout')
+            result = self.sChannel.queue_declare(exclusive=True, auto_delete=kwargs.get('auto_delete', False), arguments=kwargs.get('arguments'))
+            queueName = result.method.queue
 
-        self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
-        self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
-        self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
-        self.sThread = Thread( target=self.subscribeThread )
-        self.sThread.start()
+            self.sChannel.queue_bind(exchange=submsg['exchange'],queue=queueName)
+            self.sChannel.basic_consume(consumer_callback=submsg['cb'], queue=queueName, no_ack=submsg['no_ack'])
+            self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
+            self.sThread = Thread( target=self.subscribeThread )
+            self.sThread.start()
 
     def disconnect(self):
-        self.connection.close()
+        if self.connection != None:
+            self.connection.close()
         
     def waitForClient(self):
         if self.pThread != None:
@@ -85,6 +98,5 @@ class amqpClient(IClient):
             self.sThread.join()
         self.disconnect()
         
-
     def __exit__(self, exc_type, exc_value, traceback):
         self.disconnect()
