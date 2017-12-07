@@ -1,11 +1,11 @@
 import numpy as np
 import sys
 from amqpClient import amqpClient
-from mqttClientV2 import mqttClient
-#from mqttClient import mqttClient
+#from mqttClientV2 import mqttClient
+from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import read_from_csv, write_to_csv
-import resource
+#import resource
 
 import time
 from topic import *
@@ -47,7 +47,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
         pubs = 0
         subs = 0
         timeout = 30
-        topic = nr_pub
+        #topic = nr_pub
 
         for c in range(0, nr_pub + nr_con):
             client = None
@@ -55,9 +55,9 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
             kwargs = None
             if( broker == 'mqtt' ):
                 client = mqttClient(c, url)
-                topic = {'topic': str(topic), 'psize': 1, 'qos':0 }
+                topic = {'topic': 'my/topic', 'psize': 1, 'qos':0 }
                 kwargs_p = {'nr':1, 'ival': interval}
-                msg_s = {'topic': str(topic), 'qos':0, 'cb':callback_pub_sub_test_mqtt}
+                msg_s = {'topic': 'my/topic', 'qos':0, 'cb':callback_pub_sub_test_mqtt}
                 kwargs_s = {'timeout' : timeout}
             else:
                 client = amqpClient(c, 'amqp://{0}'.format(url))
@@ -190,7 +190,7 @@ def msg_interval_test(broker, url, fileName, iterations=1, stepsize=1, interval=
 
 if __name__=="__main__":
     #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
-    resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
+    #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
     ip = '192.168.0.4'
     broker = 'mqtt'
