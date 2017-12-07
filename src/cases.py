@@ -58,7 +58,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
                 topic = {'topic': 'my/topic', 'psize': 1, 'qos':0 }
                 kwargs_p = {'nr':1, 'ival': interval}
                 msg_s = {'topic': 'my/topic', 'qos':0, 'cb':callback_pub_sub_test_mqtt}
-                kwargs_s = {'timeout' : timeout}
+                kwargs_s = {'timeout' : 10}
             else:
                 client = amqpClient(c, 'amqp://{0}'.format(url))
                 topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
@@ -81,9 +81,8 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
 
         time.sleep(5)
 
-        if(broker  == 'amqp'):
-            for s in s_clients:
-                s.start_subscribe_timeout(kwargs_s)
+        for s in s_clients:
+            s.start_subscribe_timeout(topic, kwargs_s)
 
         for p in p_clients:
             p.publish(topic, kwargs_p)
