@@ -37,7 +37,7 @@ class mqttClient(IClient):
         #print(url_parse.password)
         #print(url_parse.username)
         self.mqttc.username_pw_set('iotgroup4', 'iot4')
-        self.hostname = '2.104.13.126'
+        self.hostname = '80.196.35.233'
         self.port = 1883
         self.id = str(cid)
         
@@ -60,8 +60,6 @@ class mqttClient(IClient):
         self.mqttc.on_message = topic['cb']
         self.mqttc.subscribe(topic['topic'], topic['qos'])
         self.waitForSubscribed()
-        self.st = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
-        self.st.start();
 	
 	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
     def publish(self, topic, kwargs):
@@ -70,22 +68,20 @@ class mqttClient(IClient):
     
 	# self, topic={'topic':'', 'psize':'', 'qos':''} kwargs = {'nr':'', 'ival':''}
     def publishfunc(self, topic, kwargs):
-        #self.mqttc.loop_start()
         for i in range(kwargs['nr']):
             self.mqttc.publish(topic['topic'], gettopic(self.id, i, topic['psize']), topic['qos'])
             time.sleep(kwargs['ival'])
-        #self.mqttc.loop_stop()
-        #self.disconnect()
+        self.disconnect()
     
 	# self, topic={'topic':'', 'qos':''} kwargs = {'timeout':'', 'cb':''}
     def subscribefunc(self, topic, kwargs):
-        self.mqttc.subscribe(topic['topic'], topic['qos'])
-        #self.mqttc.loop_start()
-        
         time.sleep(kwargs['timeout'])
         
-        #self.mqttc.loop_stop()
-        #self.disconnect()
+        self.disconnect()
+    
+    def start_subscribe_timeout(self, topic, kwargs):
+        self.st = threading.Thread(target=self.subscribefunc, args=(topic, kwargs))
+        self.st.start();
         
     def waitForClient(self):
         if self.pt != None:
@@ -110,7 +106,7 @@ class mqttClient(IClient):
     def on_connect(self, client, userdata, flags, rc):
         print(self.id + ' Connected with the result code '+mqtt.connack_string(rc))
         self.connected = True
-        self.mqttc.loop_start()
+        
     
     def on_log(self, client, obj, level, string):
         #print(string)

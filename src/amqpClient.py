@@ -99,7 +99,7 @@ class amqpClient(IClient):
                 print('AMQP Channel Connection error: {}'.format(err))
         print(str(self.id)+' subscribed')
 
-    def start_subscribe_timeout(self, kwargs):
+    def start_subscribe_timeout(self, topic, kwargs):
         if self.connection != None:
             self.connection.add_timeout(deadline=kwargs.get('timeout', 10), callback_method=self.sChannel.stop_consuming ) #TODO: defaults to 30s
 

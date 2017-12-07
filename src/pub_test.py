@@ -39,54 +39,55 @@ if __name__=="__main__":
     s_clients = []
     subs = 0
     pubs = 0
-    for i in range(10, 300, 10):
-        nr_pub = i
-        nr_con = 300 - i
+    timeout = 90
 
-        if( broker == 'mqtt' or broker == 'amqp' ):
-            for c in range(0, nr_pub + nr_con):
-                client = None
-                topic = None
-                kwargs = None
+    nr_pub = 339
+    nr_con = 1
 
-                if( broker == 'mqtt' ):
-                    client = mqttClient(c, url)
-                    topic = {'topic': 'x', 'psize': 1, 'qos':0 }
-                    kwargs_p = {'nr':1, 'ival':1}
-                    msg_s = {'topic':'x', 'qos':0, 'cb':on_message}
-                    kwargs_s = {'timeout' : 90}
-                else:
-                    client = amqpClient(c, url)
-                    topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
-                    kwargs_p = {'nr': 1, 'ival': 1}
-                    msg_s = {'exchange': 'x', 'cb': callback, 'no_ack': True}
-                    kwargs_s = {'timeout' : 59}
+    if( broker == 'mqtt' or broker == 'amqp' ):
+        for c in range(0, nr_pub + nr_con):
+            client = None
+            topic = None
+            kwargs = None
 
-                if( c < nr_pub ):
-                    p_clients.append(client)
-                    pubs += 1
-                else:
-                    s_clients.append(client)
-                    subs += 1
-                client.connect()
+            if( broker == 'mqtt' ):
+                client = mqttClient(c, url)
+                topic = {'topic': 'x', 'psize': 1, 'qos':0 }
+                kwargs_p = {'nr':1, 'ival':1}
+                msg_s = {'topic':'x', 'qos':0, 'cb':on_message}
+                kwargs_s = {'timeout' : timeout}
+            else:
+                client = amqpClient(c, url)
+                topic = [ {'exchange': 'x', 'routing_key': '', 'psize': 1 } ]
+                kwargs_p = {'nr': 1, 'ival': 1}
+                msg_s = {'exchange': 'x', 'cb': callback, 'no_ack': True}
+                kwargs_s = {'timeout' : timeout}
 
-            print('Publishers: {0} Subscribers: {1}' .format( pubs, subs ))
+            if( c < nr_pub ):
+                p_clients.append(client)
+                pubs += 1
+            else:
+                s_clients.append(client)
+                subs += 1
+            client.connect()
 
-            for s in s_clients:
-                s.subscribe(msg_s, kwargs_s)
+        print('Publishers: {0} Subscribers: {1}' .format( pubs, subs ))
 
-            if(broker  == 'amqp'):
-                for s in s_clients:
-                    s.start_subscribe_timeout(kwargs_s) 
-            time.sleep(1)
-            for p in p_clients:
-                p.publish(topic, kwargs_p)
+        for s in s_clients:
+            s.subscribe(msg_s, kwargs_s)
 
-            ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
-            for s in s_clients:
-                s.waitForClient()
+        for s in s_clients:
+            s.start_subscribe_timeout(topic, kwargs_s)
 
-            for p in p_clients:
-                p.waitForClient()
+        time.sleep(1)
+        for p in p_clients:
+            p.publish(topic, kwargs_p)
 
-        print(len(timevals))
+        ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
+        for s in s_clients:
+            s.waitForClient()
+
+        for p in p_clients:
+            p.waitForClient()
+
+    print(len(timevals))

@@ -6,6 +6,7 @@ from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import read_from_csv, write_to_csv
 import resource
+
 import time
 from topic import *
 from threading import Lock
@@ -23,7 +24,7 @@ def callback_pub_sub_test(ch, method, properties, body):
         timevals.append(timediff)
     finally:
         mutex.release()
-    #print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
+    print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
 
 def callback_pub_sub_test_mqtt(client, userdata, msg):
     global timevals
@@ -33,7 +34,7 @@ def callback_pub_sub_test_mqtt(client, userdata, msg):
         timevals.append(timediff)
     finally:
         mutex.release()
-    #print('MsgID: {0} Time difference: {1}' .format(getMsgId(msg.payload), timediff))
+    print('MsgID: {0} Time difference: {1}' .format(getMsgId(msg.payload), timediff))
 
 def callback_msg_interval(ch, method, properties, body):
     global recv_msgs, timevals
@@ -55,8 +56,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
         s_clients = []
         pubs = 0
         subs = 0
-        timeout = 119
-        topic = nr_pub
+        timeout = 50
 
         for c in range(0, nr_pub + nr_con):
             client = None
@@ -64,9 +64,9 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
             kwargs = None
             if( broker == 'mqtt' ):
                 client = mqttClient(c, url)
-                topic = {'topic': 'x', 'psize': 1, 'qos':0 }
-                kwargs_p = {'nr': 1, 'ival': interval}
-                msg_s = {'topic': 'x', 'qos':0, 'cb':callback_pub_sub_test_mqtt}
+                topic = {'topic': 'my/topic', 'psize': 1, 'qos':0 }
+                kwargs_p = {'nr':1, 'ival': interval}
+                msg_s = {'topic': 'my/topic', 'qos':0, 'cb':callback_pub_sub_test_mqtt}
                 kwargs_s = {'timeout' : timeout}
             else:
                 client = amqpClient(c, 'amqp://{0}'.format(url))
@@ -90,9 +90,8 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
 
         time.sleep(5)
 
-        if(broker  == 'amqp'):
-            for s in s_clients:
-                s.start_subscribe_timeout(kwargs_s)
+        for s in s_clients:
+            s.start_subscribe_timeout(topic, kwargs_s)
 
         for p in p_clients:
             p.publish(topic, kwargs_p)
@@ -214,7 +213,7 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test') ##memory usage cap ~300
-        pub_sub_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=300, stepsize=10, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=140, stepsize=10, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
