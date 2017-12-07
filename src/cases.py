@@ -1,15 +1,16 @@
 import numpy as np
 import sys
 from amqpClient import amqpClient
-from mqttClientV2 import mqttClient
-#from mqttClient import mqttClient
+#from mqttClientV2 import mqttClient
+from mqttClient import mqttClient
 import matplotlib.pyplot as plt
 from csv_helper import read_from_csv, write_to_csv
 import resource
-
 import time
 from topic import *
+from threading import Lock
 
+mutex = Lock()
 timevals = []
 recv_msgs = 0
 
@@ -17,13 +18,21 @@ def callback_pub_sub_test(ch, method, properties, body):
     global timevals
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
-    timevals.append(timediff)
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
     #print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
 
 def callback_pub_sub_test_mqtt(client, userdata, msg):
     global timevals
     timediff = gettimediff(msg.payload, time.time())
-    timevals.append(timediff)
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
     #print('MsgID: {0} Time difference: {1}' .format(getMsgId(msg.payload), timediff))
 
 def callback_msg_interval(ch, method, properties, body):
@@ -46,7 +55,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
         s_clients = []
         pubs = 0
         subs = 0
-        timeout = 30
+        timeout = 119
         topic = nr_pub
 
         for c in range(0, nr_pub + nr_con):
@@ -55,9 +64,9 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
             kwargs = None
             if( broker == 'mqtt' ):
                 client = mqttClient(c, url)
-                topic = {'topic': str(topic), 'psize': 1, 'qos':0 }
-                kwargs_p = {'nr':1, 'ival': interval}
-                msg_s = {'topic': str(topic), 'qos':0, 'cb':callback_pub_sub_test_mqtt}
+                topic = {'topic': 'x', 'psize': 1, 'qos':0 }
+                kwargs_p = {'nr': 1, 'ival': interval}
+                msg_s = {'topic': 'x', 'qos':0, 'cb':callback_pub_sub_test_mqtt}
                 kwargs_s = {'timeout' : timeout}
             else:
                 client = amqpClient(c, 'amqp://{0}'.format(url))
@@ -95,7 +104,7 @@ def pub_sub_run(broker, url, nr_pub, nr_con, interval=1 ):
 
         for p in p_clients:
             p.waitForClient()
-
+        print('Total msgs received: {}' .format( len(timevals)) ) 
     return np.median(timevals), nr_pub-nr_con
 
 def pub_sub_test(broker, url, fileName, iterations=10, stepsize=10):
@@ -192,7 +201,7 @@ if __name__=="__main__":
     #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
     resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
-    ip = '192.168.0.4'
+    ip = '80.196.35.233'
     broker = 'mqtt'
     device = 'piB'
     date = '07_12'
@@ -205,7 +214,7 @@ if __name__=="__main__":
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
         print('Running pub-sub-test') ##memory usage cap ~300
-        pub_sub_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=150, stepsize=10, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
+        pub_sub_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=300, stepsize=10, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
         print('Running msg-interval-test')
