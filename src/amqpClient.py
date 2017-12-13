@@ -21,8 +21,9 @@ class amqpClient(IClient):
 
     def connect(self):
         self.params = pika.URLParameters(self.url)
-        self.params.socket_timeout = 5
-        retry = 100
+        #self.params.socket_timeout = 160
+        self.params.socket_timeout = 60
+        retry = 500
         while( retry != 0 ):
             try:
                 self.connection = pika.BlockingConnection(parameters=self.params)
@@ -31,7 +32,9 @@ class amqpClient(IClient):
                 self.connection = None
                 print('AMQP BlockingConnection error: {}'.format(err))
             retry -= 1
-        print(str(self.id)+' connected')
+        if(retry == 0):
+            print("All retries tried")
+        #print(str(self.id)+' connected')
 
     def isConnected(self):
         return self.connection != None
@@ -45,7 +48,7 @@ class amqpClient(IClient):
                 pubmsg[i]['body'] = gettopic(self.id, j, psize) # added new json payload!
                 if 'sent_list' in kwargs:
                     kwargs['sent_list'].append(pubmsg[i]['body'])
-                    print(pubmsg[i]['body'])
+                    #print(pubmsg[i]['body'])
                 self.pChannel.basic_publish( **pubmsg[i] )
                 #print('sending msg: {0}'.format(i+j))
                 time.sleep( kwargs['ival'] )
@@ -97,7 +100,7 @@ class amqpClient(IClient):
                 self.disconnect()
                 self.connection = None
                 print('AMQP Channel Connection error: {}'.format(err))
-        print(str(self.id)+' subscribed')
+        #print(str(self.id)+' subscribed')
 
     def start_subscribe_timeout(self, topic, kwargs):
         if self.connection != None:
@@ -106,7 +109,7 @@ class amqpClient(IClient):
     def disconnect(self):
         if self.connection != None:
             self.connection.close()
-        print(str(self.id)+' disconnected')
+        #print(str(self.id)+' disconnected')
         
     def waitForClient(self):
         if self.pThread != None:

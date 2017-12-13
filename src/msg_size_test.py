@@ -5,21 +5,33 @@ import matplotlib.pyplot as plt
 from csv_helper import write_to_csv
 import time
 from topic import *
-import resource
+#import resource
+from threading import Lock
+
+mutex = Lock()
 
 timevals = []
 
 def callback(ch, method, properties, body):
+    global timevals, mutex
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
-    timevals.append(timediff)
-    print('nMsgID: {0} nTime difference between sent and received: {1}' \
-                                    .format(getMsgId(topic), timediff))
-                                    
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
+    #print('MsgID: {0} Time difference between sent and received: {1}'.format(getMsgId(topic), timediff))
+                                   
 def on_message(client, userdata, msg):
+    global timevals, mutex
     timediff = gettimediff(msg.payload, time.time())
-    timevals.append(timediff)
-    print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(timediff))
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
+    #print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(timediff))
 
 
 def msg_size_test(broker, url, psize):
@@ -45,19 +57,25 @@ def msg_size_test(broker, url, psize):
         s_client.connect()
 
         s_client.subscribe(msg_s, kwargs_s)
+        s_client.start_subscribe_timeout(topic, kwargs_s)
+        
         time.sleep(1)
+        
         p_client.publish(topic, kwargs_p)
 
         ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
-        s_client.waitForClient()
         p_client.waitForClient()
+        s_client.waitForClient()
         
     return np.median(timevals), np.mean(timevals), np.var(timevals)
 
 
 if __name__=="__main__":
+    print("Running msg_size_test")
     #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
-
+    device = 'desktop'
+    date = '12_12'
+    
     # minimum message size
     msg_min = 0
     
@@ -71,10 +89,10 @@ if __name__=="__main__":
     rep_nr = 5
     
     # protocol 
-    proto = 'mqtt'
+    proto = 'amqp'
     
     # url
-    url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
+    url = 'amqp://iotgroup4:iot4@80.196.35.233:5672'
     
     msg_ival = int((msg_max-msg_min)/(msg_nr-1))
     msg_med_times  = []
@@ -90,7 +108,7 @@ if __name__=="__main__":
         mean_vec = []
         var_vec  = []
         for j in msg_psize:
-            print(j)
+            #print(j)
             timevals = []
             time_med, time_mean, time_var = msg_size_test(proto, url, j)
             med_vec.append(time_med)
@@ -108,7 +126,7 @@ if __name__=="__main__":
         msg_mean_times.append(mean)
         msg_var_times.append(var)
     
-    write_to_csv(msg_psize, msg_med_times,  '../csv/' + proto + '_msg_size_test_med',  proto + '_msg_size_test_med')
-    write_to_csv(msg_psize, msg_mean_times, '../csv/' + proto + '_msg_size_test_mean', proto + '_msg_size_test_mean')
-    write_to_csv(msg_psize, msg_var_times,  '../csv/' + proto + '_msg_size_test_var',  proto + '_msg_size_test_var')
+    write_to_csv(msg_psize, msg_med_times,  '../csv/finalresults/' + proto + '_msg_size_test_med_' + date + '_' + device,  proto + '_msg_size_test_med_' + date + '_' + device)
+    write_to_csv(msg_psize, msg_mean_times, '../csv/finalresults/' + proto + '_msg_size_test_mean_' + date + '_' + device, proto + '_msg_size_test_mean_' + date + '_' + device)
+    write_to_csv(msg_psize, msg_var_times,  '../csv/finalresults/' + proto + '_msg_size_test_var_' + date + '_' + device,  proto + '_msg_size_test_var_' + date + '_' + device)
     

@@ -4,7 +4,7 @@ import sys
 
 
 if __name__=="__main__":
-    hostname = '2.104.13.126'
+    hostname = '80.196.35.233'
     password = sys.argv[1]
     username = 'pi'
     port = 22

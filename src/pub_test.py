@@ -84,10 +84,10 @@ if __name__=="__main__":
             p.publish(topic, kwargs_p)
 
         ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
-        for s in s_clients:
-            s.waitForClient()
-
         for p in p_clients:
             p.waitForClient()
+        
+        for s in s_clients:
+            s.waitForClient()
 
     print(len(timevals))

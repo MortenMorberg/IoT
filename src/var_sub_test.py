@@ -7,20 +7,31 @@ from csv_helper import write_to_csv
 
 import time
 from topic import *
+from threading import Lock
 
+mutex = Lock()
 timevals = []
 
 def callback(ch, method, properties, body):
+    global timevals, mutex
     topic = body.decode('utf-8')
     timediff = gettimediff(topic, time.time())
-    timevals.append(timediff)
-    print('MsgID: {0} Time difference between sent and received: {1}' \
-                                    .format(getMsgId(topic), timediff))
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
+    #print('MsgID: {0} Time difference between sent and received: {1}'.format(getMsgId(topic), timediff))
                                    
 def on_message(client, userdata, msg):
+    global timevals, mutex
     timediff = gettimediff(msg.payload, time.time())
-    timevals.append(timediff)
-    print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(timediff))
+    mutex.acquire()
+    try:
+        timevals.append(timediff)
+    finally:
+        mutex.release()
+    #print("Topic: "+msg.topic+" DeviceId: "+str(getDeviceId(msg.payload))+" MsgId: "+ str(getMsgId(msg.payload))+" Time: "+str(timediff))
 
 def var_sub_test(broker, url, nr_pub, nr_con ):
     if( broker == 'mqtt' or broker == 'amqp' ):
@@ -52,19 +63,21 @@ def var_sub_test(broker, url, nr_pub, nr_con ):
 
         for s in s_clients:
             s.subscribe(msg_s, kwargs_s)
-        if(broker  == 'amqp'):
-            for s in s_clients:
-                s.start_subscribe_timeout(kwargs_s) 
+            
+        for s in s_clients:
+            s.start_subscribe_timeout(topic, kwargs_s)
+                
         time.sleep(1)
+        
         for p in p_clients:
             p.publish(topic, kwargs_p)
 
         ## wait until they are terminated, make sure to disconnect so that connections at the host are freed
-        for s in s_clients:
-            s.waitForClient()
-
         for p in p_clients:
             p.waitForClient()
+        
+        for s in s_clients:
+            s.waitForClient()
 
     return np.median(timevals), np.mean(timevals), np.var(timevals), len(timevals)
 '''
@@ -81,8 +94,11 @@ if __name__=="__main__":
     print(msg_nr)
 '''
 if __name__=="__main__":
+    print("Running var_sub_test")
     #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
-
+    device = 'desktop'
+    date = '12_12'
+    
     #minimum number of subscribers
     sub_min = 10
     
@@ -96,10 +112,10 @@ if __name__=="__main__":
     rep_nr = 5
     
     # protocol name
-    proto = 'mqtt'
+    proto = 'amqp'
     
     # url
-    url = 'amqp://iotgroup4:iot4@2.104.13.126:5672'
+    url = 'amqp://iotgroup4:iot4@80.196.35.233:5672'
     
     sub_ival = int((sub_max-sub_min)/(sub_nr-1))
     sub_vars = []
@@ -115,9 +131,9 @@ if __name__=="__main__":
         mean_vec = []
         var_vec  = []
         for j in sub_xval:
-            print(j)
+            #print(j)
             timevals = []
-            time_med, time_mean, time_var = var_sub_test(proto, url, 1, j)
+            time_med, time_mean, time_var, _ = var_sub_test(proto, url, 1, j)
             med_vec.append(time_med)
             mean_vec.append(time_mean)
             var_vec.append(time_var)
@@ -133,7 +149,7 @@ if __name__=="__main__":
         sub_mean.append(mean)
         sub_vars.append(var)
     
-    write_to_csv(sub_xval, sub_med,  '../csv/' + proto + '_var_sub_test_med',  proto + '_var_sub_test_med')
-    write_to_csv(sub_xval, sub_mean, '../csv/' + proto + '_var_sub_test_mean', proto + '_var_sub_test_mean')
-    write_to_csv(sub_xval, sub_vars,  '../csv/' + proto + '_var_sub_test_var',  proto + '_var_sub_test_var')
+    write_to_csv(sub_xval, sub_med,  '../csv/finalresults/' + proto + '_var_sub_test_med_' + date + '_' + device,  proto + '_var_sub_test_med_' + date + '_' + device)
+    write_to_csv(sub_xval, sub_mean, '../csv/finalresults/' + proto + '_var_sub_test_mean_' + date + '_' + device, proto + '_var_sub_test_mean_' + date + '_' + device)
+    write_to_csv(sub_xval, sub_vars,  '../csv/finalresults/' + proto + '_var_sub_test_var_' + date + '_' + device,  proto + '_var_sub_test_var_' + date + '_' + device)
         
