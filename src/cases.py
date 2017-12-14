@@ -39,16 +39,16 @@ def callback_pub_sub_test_mqtt(client, userdata, msg):
 def callback_msg_interval(ch, method, properties, body):
     global recv_msgs, timevals
     topic = body.decode('utf-8')
-    #timediff = gettimediff(topic, time.perf_counter())
-    timediff = gettimediff(topic, time.time())
+    timediff = gettimediff(topic, time.perf_counter())
+    #timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
     recv_msgs += 1
     #print('MsgID: {0} Time difference: {1}' .format(getMsgId(topic), timediff))
 
 def callback_msg_interval_mqtt(client, userdata, msg):
     global recv_msgs, timevals
-    #timediff = gettimediff(msg.payload, time.perf_counter())
-    timediff = gettimediff(topic, time.time())
+    timediff = gettimediff(msg.payload, time.perf_counter())
+    #timediff = gettimediff(topic, time.time())
     timevals.append(timediff)
     recv_msgs += 1
 
@@ -205,9 +205,9 @@ if __name__=="__main__":
     #Dont limit file descriptors!! has to be run as sudo - https://stackoverflow.com/questions/2569620/socket-accept-error-24-to-many-open-files
     #resource.setrlimit(resource.RLIMIT_NOFILE, (65536, 65536))
 
-    #ip = '80.196.35.233'
-    ip = 'localhost'
-    broker = 'amqp'
+    ip = '80.196.35.233'
+    #ip = 'localhost'
+    broker = 'mqtt'
     device = 'desktop'
     date = '14_12'
 
@@ -218,7 +218,7 @@ if __name__=="__main__":
     
     case = sys.argv[1]
     if( case  == 'pub-sub-test'):
-        print('Running pub-sub-test') ##timeout ~160
+        print('Running pub-sub-test')
         pub_sub_test(broker=broker, url='iotgroup4:iot4@{}:5672'.format(ip), iterations=400, stepsize=10, fileName='{0}_pub_sub_ratio_test_{1}_{2}' .format(broker, date, device))
 
     elif( case == 'msg-interval-test' ):
@@ -229,11 +229,11 @@ if __name__=="__main__":
     elif( case == 'all'):
         broker = 'amqp'
         print('Running msg-interval-test')
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=60, stepsize=10, interval=0.1, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=60, stepsize=5, interval=0.1, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
         broker = 'mqtt'
         print('Running msg-interval-test')
-        msg_interval_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=60, stepsize=10, interval=0.1, \
+        msg_interval_test(broker=broker, url='iotgroup4:iot4@80.196.35.233:5672', iterations=60, stepsize=5, interval=0.1, \
                                                 fileName=['{0}_msg_interval_test_{1}_{2}' .format(broker, date, device), '{0}_msg_time_test_{1}_{2}' .format(broker, date, device)])
     else:
         print('Exit')

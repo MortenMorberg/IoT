@@ -47,8 +47,8 @@ class mqttClient(IClient):
         #self.mqttc.on_log = self.on_log
         
     def connect(self):
-        #self.mqttc.connect(self.hostname, self.port, keepalive = 180 )
-        self.mqttc.connect(self.hostname, self.port)
+        self.mqttc.connect(self.hostname, self.port, keepalive = 180 )
+        #self.mqttc.connect(self.hostname, self.port)
         self.mqttc.loop_start()
         self.waitForConnect()
     
