@@ -8,7 +8,8 @@ import json
 import time
 
 def gettopic(deviceid, msgid, psize):
-    timestamp = str(time.time()).ljust(20,'0') #pad zeros to timestamp!
+    #timestamp = str(time.time()).ljust(20,'0') #pad zeros to timestamp!
+    timestamp = str(time.perf_counter()).ljust(20,'0')
     size_msg = len(json.dumps({"deviceid":deviceid, "msgid":msgid, "Time":timestamp, "Payload":''}))
     return json.dumps({"deviceid":deviceid, "msgid":msgid, "time":timestamp, "payload":''.ljust(psize)})
    
